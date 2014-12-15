@@ -15,9 +15,25 @@ namespace fs = boost::filesystem;
 // AndroidDevice
 //----------------------------------------------------------------------------------
 AndroidDevice::AndroidDevice(ros::NodeHandle* nh, Classifier* classifier) :
-    nh_(nh), it_(*nh), fps_(FPS), size_(cv::Size(320, 240)), num_frames_(0), output_dir_(OUTPUT_DIR), classifier_(classifier)
+    nh_(nh), it_(*nh),
+    fps_(FPS), size_(cv::Size(320, 240)), num_frames_(0),
+    img_buf_(NUM_FRAME), flag(1),
+    output_dir_(OUTPUT_DIR), classifier_(classifier)
 {
   ROS_INFO("AndroidDevice has constructed");
+
+  // image subscriber
+  image_transport::TransportHints hints("compressed", ros::TransportHints());
+  subscriber_ = it_.subscribe("moverio/camera", 1, &AndroidDevice::storeMat, this, hints);
+
+  // user status publisher
+  server_status_ = nh_->advertise<std_msgs::String>("server_status", 1);
+
+  // initialize a preview window
+  cv::namedWindow("cv_moverio");
+  cv::startWindowThread();
+  cv::Mat img = cv::imread("/home/kazuto/catkin_ws/src/activity_recognition/moverio.jpg", 1);
+  cv::imshow("cv_moverio", img);
 }
 
 //----------------------------------------------------------------------------------
@@ -25,31 +41,6 @@ AndroidDevice::~AndroidDevice()
 {
   ROS_INFO("AndroidDevice has destructed");
   cv::destroyWindow("cv_moverio");
-}
-
-//----------------------------------------------------------------------------------
-void AndroidDevice::run()
-{
-    // image subscriber
-    image_transport::TransportHints hints("compressed", ros::TransportHints());
-    subscriber_ = it_.subscribe("moverio/camera", 1, &AndroidDevice::storeMat, this, hints);
-
-    // user status publisher
-    server_status_ = nh_->advertise<std_msgs::String>("server_status", 1);
-
-    // initialize a preview window
-    cv::namedWindow("cv_moverio");
-    cv::startWindowThread();
-    cv::Mat img = cv::imread("/home/kazuto/catkin_ws/src/activity_recognition/moverio.jpg", 1);
-    cv::imshow("cv_moverio", img);
-}
-
-//----------------------------------------------------------------------------------
-void* AndroidDevice::run_thread(void *obj)
-{
-    AndroidDevice *android_thread = reinterpret_cast<AndroidDevice *>(obj);
-    android_thread->run();
-    return NULL;
 }
 
 //----------------------------------------------------------------------------------
@@ -74,13 +65,13 @@ void AndroidDevice::storeMat(const sensor_msgs::ImageConstPtr& msg)
   cv::imshow("cv_moverio", img);
   cv::waitKey(10);
 
-  // image array
-  img_[num_frames_] = img;
+  // circular buffer for image
+  img_buf_.push_back(img);
 
-  if (++num_frames_ >= NUM_FRAME)
+  if (img_buf_.full() && flag)
   {
-    createVideo();
-    num_frames_ = 0;
+    flag = 0;
+    boost::thread video_thread(&AndroidDevice::createVideo, this);
   }
 }
 
@@ -92,7 +83,7 @@ void AndroidDevice::createVideo()
   video_writer_.open(output_dir_, CV_FOURCC_DEFAULT, fps_, size_);
   for (int i = 0; i < NUM_FRAME; i++)
   {
-    video_writer_ << img_[i];
+    video_writer_ << img_buf_[i];
   }
 
   // ffmpeg
@@ -100,8 +91,8 @@ void AndroidDevice::createVideo()
       "ffmpeg -i ~/catkin_ws/src/activity_recognition/video/moverio.avi -vcodec libxvid -s 320x240 -y ~/catkin_ws/src/activity_recognition/video/moverio_converted.avi");
 
   video_writer_.release();
-
   this->detectFeatures();
+  flag = 1;
 }
 
 //----------------------------------------------------------------------------------
@@ -111,8 +102,7 @@ bool AndroidDevice::detectFeatures()
   server_status_.publish(msg_);
 
   // stip detection
-  system(
-      "~/stip-2.0-linux/bin/stipdet -i ~/catkin_ws/src/activity_recognition/video_list.txt -vpath ~/catkin_ws/src/activity_recognition/video/ -o ~/catkin_ws/src/activity_recognition/moverio.txt");
+  system("~/stip-2.0-linux/bin/stipdet -i ~/catkin_ws/src/activity_recognition/video_list.txt -vpath ~/catkin_ws/src/activity_recognition/video/ -o ~/catkin_ws/src/activity_recognition/moverio.txt");
   ROS_INFO("STIP descripted");
 
   std::vector<Video> video_list;
@@ -196,8 +186,7 @@ bool AndroidDevice::detectFeatures()
   }
   else
   {
-    boost::thread classifier_thread(&Classifier::Classify, classifier_, hog_mat, video_list);
-    classifier_thread.join();
+    classifier_->Classify(hog_mat,video_list);
   }
 
   // release

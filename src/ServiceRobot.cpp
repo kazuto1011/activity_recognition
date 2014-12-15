@@ -15,30 +15,18 @@ ServiceRobot::ServiceRobot(ros::NodeHandle* nh):
     user_activity_(-1)
 {
   ROS_INFO("ServiceRobot has constructed");
+
+  // initialize some nodes
+  server_status_ = nh_->advertise<std_msgs::String>("server_status", 1);
+  user_status_ = nh_->subscribe("user_activity", 1, &ServiceRobot::setActivity, this);
+  voice_server_ = nh_->advertiseService("user_voice_command", &ServiceRobot::voiceCallBack, this);
+  tts_client_ = nh_->serviceClient<activity_recognition::robot_tts>("test");
 }
 
 //----------------------------------------------------------------------------------
 ServiceRobot::~ServiceRobot()
 {
   ROS_INFO("ServiceRobot has destructed");
-}
-
-//----------------------------------------------------------------------------------
-void ServiceRobot::run()
-{
-    // initialize some nodes
-    server_status_ = nh_->advertise<std_msgs::String>("server_status", 1);
-    user_status_ = nh_->subscribe("user_activity", 1, &ServiceRobot::setActivity, this);
-    voice_server_ = nh_->advertiseService("user_voice_command", &ServiceRobot::voiceCallBack, this);
-    tts_client_ = nh_->serviceClient<activity_recognition::robot_tts>("test");
-}
-
-//----------------------------------------------------------------------------------
-void* ServiceRobot::run_thread(void *obj)
-{
-    ServiceRobot *robot_thread = reinterpret_cast<ServiceRobot *>(obj);
-    robot_thread->run();
-    return NULL;
 }
 
 //----------------------------------------------------------------------------------

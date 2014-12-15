@@ -27,8 +27,6 @@ private:
 public:
   ServiceRobot(ros::NodeHandle* nh);
   ~ServiceRobot();
-  void run();
-  static void* run_thread(void *obj);
   void setActivity(const std_msgs::StringConstPtr& msg);
   bool voiceCallBack(activity_recognition::user_voice::Request &req,
                      activity_recognition::user_voice::Response &res);

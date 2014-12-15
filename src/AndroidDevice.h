@@ -31,13 +31,12 @@ private:
   cv::VideoWriter video_writer_;
 
   int num_frames_;
-  cv::Mat img_[NUM_FRAME];
+  int flag;
+  boost::circular_buffer<cv::Mat> img_buf_;
   std_msgs::String msg_;
 public:
   AndroidDevice(ros::NodeHandle* nh, Classifier* classifier);
   ~AndroidDevice();
-  void run();
-  static void* run_thread(void *obj);
   void storeMat(const sensor_msgs::ImageConstPtr& msg);
   void createVideo();
   bool detectFeatures();

@@ -29,8 +29,6 @@ private:
 public:
   Classifier(ros::NodeHandle* nh);
   ~Classifier();
-  void run();
-  static void* run_thread(void *obj);
   void Classify(cv::Mat& data, std::vector<Video>& video_list);
 };
 

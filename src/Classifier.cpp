@@ -22,8 +22,10 @@ Classifier::Classifier(ros::NodeHandle* nh):
 
   // TODO
   fisher_ = FisherVector(GMM_DIR);
-
   model_ = svm_load_model(SVM_DIR);
+
+  // status publisher
+  status_ = nh_->advertise<std_msgs::String>("user_activity", 1);
 }
 
 //----------------------------------------------------------------------------------
@@ -32,21 +34,6 @@ Classifier::~Classifier()
   ROS_INFO("Classifier has destructed");
   svm_free_and_destroy_model(&model_);
   nh_->shutdown();
-}
-
-//----------------------------------------------------------------------------------
-void Classifier::run()
-{
-    // status publisher
-    status_ = nh_->advertise<std_msgs::String>("user_activity", 1);
-}
-
-//----------------------------------------------------------------------------------
-void* Classifier::run_thread(void *obj)
-{
-    Classifier *classifier_thread = reinterpret_cast<Classifier *>(obj);
-    classifier_thread->run();
-    return NULL;
 }
 
 //----------------------------------------------------------------------------------

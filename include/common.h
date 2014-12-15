@@ -16,6 +16,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <pthread.h>
 
 // VLFeat
 extern "C" {
@@ -42,6 +43,7 @@ extern "C" {
 // Boost
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
+#include <boost/circular_buffer.hpp>
 
 // LibSVM
 #include "svm.h"
