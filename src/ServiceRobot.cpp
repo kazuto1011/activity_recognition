@@ -36,11 +36,17 @@ void ServiceRobot::setActivity(const std_msgs::StringConstPtr& msg)
     if (!msg->data.compare("eat_a_meal"))
         user_activity_ = 0;
     else if (!msg->data.compare("gaze_at_a_robot"))
+    {
         user_activity_ = 1;
+        this->robotTTS(1);
+    }
     else if (!msg->data.compare("gaze_at_a_tree"))
         user_activity_ = 2;
     else if (!msg->data.compare("look_around"))
+    {
         user_activity_ = 3;
+        this->robotTTS(1);
+    }
     else if (!msg->data.compare("read_a_book"))
         user_activity_ = 4;
     else
@@ -75,25 +81,25 @@ void ServiceRobot::robotTTS(int service)
     case 0: // taking-water service
         switch (user_activity_) {
         case 0: // eating
-            srv.request.text = "Would you need a cup of tea?";
+            srv.request.text = "Would you need a bottle of tea ?";
             break;
         case 2: // planting
-            srv.request.text = "Would you need a watering can?";
+            srv.request.text = "Would you need a watering can ?";
             break;
         case 4: // reading
-            srv.request.text = "Would you meed a cup of coffee?";
+            srv.request.text = "Would you need a cup of coffee ?";
             break;
         default:
-            srv.request.text = "What kind of water would you need?";
+            srv.request.text = "What kind of water would you need ?";
             break;
         }
     case 1: // pro-active suggestion
         switch (user_activity_) {
         case 1: // gazing at the robot
-            srv.request.text = "Can I help you?";
+            srv.request.text = "Can I help you ?";
             break;
         case 3: // looking around
-            srv.request.text = "Are you looking for anything?";
+            srv.request.text = "Are you looking for anything ?";
             break;
         default:
             break;

@@ -72,3 +72,11 @@ target_link_libraries(activity_recognition_server
   ${OpenCV_LIBRARIES}
   ${catkin_LIBRARIES}
 )
+
+add_executable(virtual_smartpal
+  src/virtual_smartpal.cpp
+)
+add_dependencies(virtual_smartpal activity_recognition_generate_messages_cpp)
+target_link_libraries(virtual_smartpal
+  ${catkin_LIBRARIES}
+)

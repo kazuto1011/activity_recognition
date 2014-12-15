@@ -85,12 +85,11 @@ void AndroidDevice::createVideo()
   {
     video_writer_ << img_buf_[i];
   }
+  video_writer_.release();
 
   // ffmpeg
-  system(
-      "ffmpeg -i ~/catkin_ws/src/activity_recognition/video/moverio.avi -vcodec libxvid -s 320x240 -y ~/catkin_ws/src/activity_recognition/video/moverio_converted.avi");
+  system("ffmpeg -i ~/catkin_ws/src/activity_recognition/video/moverio.avi -vcodec libxvid -s 320x240 -y ~/catkin_ws/src/activity_recognition/video/moverio_converted.avi");
 
-  video_writer_.release();
   this->detectFeatures();
   flag = 1;
 }
