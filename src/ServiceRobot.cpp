@@ -14,7 +14,7 @@ ServiceRobot::ServiceRobot(ros::NodeHandle* nh):
     nh_(nh),
     user_activity_(-1)
 {
-  ROS_INFO("ServiceRobot has constructed");
+  ROS_INFO("ServiceRobot constructor");
 
   // initialize some nodes
   server_status_ = nh_->advertise<std_msgs::String>("server_status", 1);
@@ -26,7 +26,7 @@ ServiceRobot::ServiceRobot(ros::NodeHandle* nh):
 //----------------------------------------------------------------------------------
 ServiceRobot::~ServiceRobot()
 {
-  ROS_INFO("ServiceRobot has destructed");
+  ROS_INFO("ServiceRobot destructor");
 }
 
 //----------------------------------------------------------------------------------
@@ -77,9 +77,11 @@ void ServiceRobot::robotTTS(int service)
 {
     activity_recognition::robot_tts srv;
 
-    switch (service) {
+    switch (service)
+    {
     case 0: // taking-water service
-        switch (user_activity_) {
+        switch (user_activity_)
+        {
         case 0: // eating
             srv.request.text = "Would you need a bottle of tea ?";
             break;
@@ -93,8 +95,10 @@ void ServiceRobot::robotTTS(int service)
             srv.request.text = "What kind of water would you need ?";
             break;
         }
+        break;
     case 1: // pro-active suggestion
-        switch (user_activity_) {
+        switch (user_activity_)
+        {
         case 1: // gazing at the robot
             srv.request.text = "Can I help you ?";
             break;
@@ -104,6 +108,7 @@ void ServiceRobot::robotTTS(int service)
         default:
             break;
         }
+        break;
     }
 
     // service call
@@ -113,6 +118,6 @@ void ServiceRobot::robotTTS(int service)
     }
     else
     {
-        ROS_ERROR("Failed to call service");
+        ROS_ERROR("Failed to call tts service");
     }
 }

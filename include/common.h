@@ -76,13 +76,13 @@ private:
     int num_data;
     int label;
 public:
-    Video(int i, int j, int k) { this->start_idx = i; this->num_data = j; this->label = k; };
-    int GetIdx(){ return this->start_idx; };
-    int GetNumData(){ return this->num_data; };
-    int GetLabel(){ return this->label; };
-    void SetIdx(int i){ this->start_idx = i; };
-    void SetNumData(int i){ this->num_data = i; };
-    void SetLabel(int i){ this->label = i; };
+    Video(int i, int j, int k) { this->start_idx = i; this->num_data = j; this->label = k; }
+    int GetIdx(){ return this->start_idx; }
+    int GetNumData(){ return this->num_data; }
+    int GetLabel(){ return this->label; }
+    void SetIdx(int i){ this->start_idx = i; }
+    void SetNumData(int i){ this->num_data = i; }
+    void SetLabel(int i){ this->label = i; }
 };
 
 #endif /* _DEFINE_H */

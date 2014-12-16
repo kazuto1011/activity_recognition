@@ -5,8 +5,8 @@
  *      Author: kazuto
  */
 
-#ifndef _SERVICEROBOT_H_
-#define _SERVICEROBOT_H_
+#ifndef _SERVICE_ROBOT_H_
+#define _SERVICE_ROBOT_H_
 
 #include "common.h"
 #include "activity_recognition/robot_tts.h"
@@ -24,6 +24,7 @@ private:
   ros::ServiceServer voice_server_;
   ros::ServiceClient tts_client_;
   int user_activity_;
+
 public:
   ServiceRobot(ros::NodeHandle* nh);
   ~ServiceRobot();
@@ -33,4 +34,4 @@ public:
   void robotTTS(int service);
 };
 
-#endif /* _SERVICEROBOT_H_ */
+#endif /* _SERVICE_ROBOT_H_ */

@@ -17,15 +17,18 @@ class Classifier
 {
 private:
   ros::NodeHandle* nh_;
+  std_msgs::String msg_;
   ros::Publisher status_;
 
-  struct svm_model* model_;
   cv::PCA pca_;
   FisherVector fisher_;
+  VLAD vlad_;
+  BoVW bovw_;
+  struct svm_model* model_;
 
   std::vector<Video> video_list_;
   cv::Mat data_;
-  std_msgs::String msg_;
+
 public:
   Classifier(ros::NodeHandle* nh);
   ~Classifier();

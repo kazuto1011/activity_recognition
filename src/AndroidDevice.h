@@ -20,20 +20,23 @@ class AndroidDevice
 {
 private:
   ros::NodeHandle* nh_;
+  std_msgs::String msg_;
+  ros::Publisher server_status_;
   image_transport::ImageTransport it_;
   image_transport::Subscriber subscriber_;
-  ros::Publisher server_status_;
+
   Classifier* classifier_;
 
-  std::string output_dir_;
-  double fps_;
-  cv::Size size_;
   cv::VideoWriter video_writer_;
+  std::string output_dir_;
+  cv::Size size_;
+  double fps_;
 
-  int num_frames_;
-  int flag;
+  bool flag;
+  std::string ffmpeg_;
+  std::string stipdet_;
   boost::circular_buffer<cv::Mat> img_buf_;
-  std_msgs::String msg_;
+
 public:
   AndroidDevice(ros::NodeHandle* nh, Classifier* classifier);
   ~AndroidDevice();

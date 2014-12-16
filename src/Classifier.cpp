@@ -15,7 +15,7 @@
 Classifier::Classifier(ros::NodeHandle* nh):
     nh_(nh)
 {
-  ROS_INFO("Classifier has constructed");
+  ROS_INFO("Classifier constructor");
 
   // initialize SVM, PCA, and Fisher Vector encoder
   LoadPCA(pca_.eigenvectors, pca_.eigenvalues, pca_.mean, PCA_DIR);
@@ -31,7 +31,7 @@ Classifier::Classifier(ros::NodeHandle* nh):
 //----------------------------------------------------------------------------------
 Classifier::~Classifier()
 {
-  ROS_INFO("Classifier has destructed");
+  ROS_INFO("Classifier destructor");
   svm_free_and_destroy_model(&model_);
   nh_->shutdown();
 }

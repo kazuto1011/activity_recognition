@@ -9,18 +9,17 @@
 #include "common.h"
 #include "Classifier.h"
 
-namespace fs = boost::filesystem;
-
 //----------------------------------------------------------------------------------
 // AndroidDevice
 //----------------------------------------------------------------------------------
 AndroidDevice::AndroidDevice(ros::NodeHandle* nh, Classifier* classifier) :
     nh_(nh), it_(*nh),
-    fps_(FPS), size_(cv::Size(320, 240)), num_frames_(0),
-    img_buf_(NUM_FRAME), flag(1),
-    output_dir_(OUTPUT_DIR), classifier_(classifier)
+    fps_(FPS), size_(cv::Size(320, 240)),
+    img_buf_(NUM_FRAME), flag(true),
+    output_dir_(OUTPUT_DIR), ffmpeg_("ffmpeg"), stipdet_("~/stip-2.0-linux/bin/stipdet"),
+    classifier_(classifier)
 {
-  ROS_INFO("AndroidDevice has constructed");
+  ROS_INFO("AndroidDevice constructor");
 
   // image subscriber
   image_transport::TransportHints hints("compressed", ros::TransportHints());
@@ -34,20 +33,43 @@ AndroidDevice::AndroidDevice(ros::NodeHandle* nh, Classifier* classifier) :
   cv::startWindowThread();
   cv::Mat img = cv::imread("/home/kazuto/catkin_ws/src/activity_recognition/moverio.jpg", 1);
   cv::imshow("cv_moverio", img);
+
+  // ffmpeg operation
+  // input source
+  ffmpeg_ += " -i ";
+  ffmpeg_ += "~/catkin_ws/src/activity_recognition/video/moverio.avi";
+  // output codec
+  ffmpeg_ += " -vcodec ";
+  ffmpeg_ += "libxvid";
+  // output size
+  ffmpeg_ += " -s ";
+  ffmpeg_ += "320x240";
+  // output path
+  ffmpeg_ += " -y ";
+  ffmpeg_ += "~/catkin_ws/src/activity_recognition/video/moverio_converted.avi";
+
+  // STIP detection
+  // input list file
+  stipdet_ += " -i ";
+  stipdet_ += "~/catkin_ws/src/activity_recognition/video_list.txt";
+  // input video path
+  stipdet_ += " -vpath ";
+  stipdet_ += "~/catkin_ws/src/activity_recognition/video/";
+  // output path
+  stipdet_ += " -o ";
+  stipdet_ += "~/catkin_ws/src/activity_recognition/moverio.txt";
 }
 
 //----------------------------------------------------------------------------------
 AndroidDevice::~AndroidDevice()
 {
-  ROS_INFO("AndroidDevice has destructed");
+  ROS_INFO("AndroidDevice destructor");
   cv::destroyWindow("cv_moverio");
 }
 
 //----------------------------------------------------------------------------------
 void AndroidDevice::storeMat(const sensor_msgs::ImageConstPtr& msg)
 {
-  msg_.data = "Recording...";
-  server_status_.publish(msg_);
   cv::Mat img;
 
   // cv_bridge conversion; sensor_msgs/Image -> cv::Mat
@@ -70,7 +92,7 @@ void AndroidDevice::storeMat(const sensor_msgs::ImageConstPtr& msg)
 
   if (img_buf_.full() && flag)
   {
-    flag = 0;
+    flag = false;
     boost::thread video_thread(&AndroidDevice::createVideo, this);
   }
 }
@@ -78,9 +100,8 @@ void AndroidDevice::storeMat(const sensor_msgs::ImageConstPtr& msg)
 //----------------------------------------------------------------------------------
 void AndroidDevice::createVideo()
 {
-  ROS_INFO("create a video");
-
   video_writer_.open(output_dir_, CV_FOURCC_DEFAULT, fps_, size_);
+
   for (int i = 0; i < NUM_FRAME; i++)
   {
     video_writer_ << img_buf_[i];
@@ -88,21 +109,21 @@ void AndroidDevice::createVideo()
   video_writer_.release();
 
   // ffmpeg
-  system("ffmpeg -i ~/catkin_ws/src/activity_recognition/video/moverio.avi -vcodec libxvid -s 320x240 -y ~/catkin_ws/src/activity_recognition/video/moverio_converted.avi");
+  system(ffmpeg_.c_str());
+  ROS_INFO("created a new video & converted the codec");
 
   this->detectFeatures();
-  flag = 1;
+  flag = true;
 }
 
 //----------------------------------------------------------------------------------
 bool AndroidDevice::detectFeatures()
 {
-  msg_.data = "Detecting...";
+  msg_.data = "STIP detecting...";
   server_status_.publish(msg_);
 
   // stip detection
-  system("~/stip-2.0-linux/bin/stipdet -i ~/catkin_ws/src/activity_recognition/video_list.txt -vpath ~/catkin_ws/src/activity_recognition/video/ -o ~/catkin_ws/src/activity_recognition/moverio.txt");
-  ROS_INFO("STIP descripted");
+  system(stipdet_.c_str());
 
   std::vector<Video> video_list;
 
@@ -111,10 +132,11 @@ bool AndroidDevice::detectFeatures()
   cv::Mat hof_mat = cv::Mat_<float>(num_data, HOF_DIM);
   cv::Mat hoghof_mat = cv::Mat_<float>(num_data, HOGHOF_DIM);
 
-  fs::path output_path = TEXT_DIR;
+  msg_.data = "Loading features...";
+  server_status_.publish(msg_);
 
   // file stream
-  std::ifstream ifs(output_path.c_str());
+  std::ifstream ifs(TEXT_DIR);
   if (!ifs)
   {
     ROS_ERROR("cannot open the file");
@@ -132,7 +154,7 @@ bool AndroidDevice::detectFeatures()
     {
       count[0] = 9;  // info of the features
       count[1] = 72; // the dimension of hog
-      count[2] = 1; // check;
+      count[2] = 1;  // check;
 
       // point-type x y t sigma2 tau2 detector-confidence
       // point-type y-norm x-norm t-norm y x t sigma2 tau2
@@ -174,17 +196,14 @@ bool AndroidDevice::detectFeatures()
   hoghof_mat.resize(num_data);
   video_list.push_back(Video(0, num_data, -1));
 
-  ROS_INFO("Features loaded");
-
   if (!count[2])
   {
     ROS_ERROR("no feature has detected");
-    std_msgs::String msg;
-    msg.data = "no results";
-    server_status_.publish(msg);
   }
   else
   {
+    msg_.data = "PCA, Vector encoding...";
+    server_status_.publish(msg_);
     classifier_->Classify(hog_mat,video_list);
   }
 
