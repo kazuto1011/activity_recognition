@@ -20,7 +20,12 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
   ros::AsyncSpinner spinner(0);
 
-  Classifier classifier(&nh);
+  ROS_INFO_STREAM(INIT_ENCODE);
+
+  int encoding_mode = 0;
+  std::cin >> encoding_mode;
+
+  Classifier classifier(&nh, encoding_mode);
   AndroidDevice android_device(&nh, &classifier);
   ServiceRobot service_robot(&nh);
 

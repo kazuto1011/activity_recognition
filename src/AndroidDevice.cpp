@@ -14,9 +14,9 @@
 //----------------------------------------------------------------------------------
 AndroidDevice::AndroidDevice(ros::NodeHandle* nh, Classifier* classifier) :
     nh_(nh), it_(*nh),
-    fps_(FPS), size_(cv::Size(320, 240)),
-    img_buf_(NUM_FRAME), flag(true),
-    output_dir_(OUTPUT_DIR), ffmpeg_("ffmpeg"), stipdet_("~/stip-2.0-linux/bin/stipdet"),
+    fps_(FPS), size_(cv::Size(320, 240)), img_buf_(NUM_FRAME),
+    flag(true), output_dir_(OUTPUT_DIR),
+    ffmpeg_("ffmpeg"), stipdet_("~/stip-2.0-linux/bin/stipdet"),
     classifier_(classifier)
 {
   ROS_INFO("AndroidDevice constructor");
@@ -204,7 +204,7 @@ bool AndroidDevice::detectFeatures()
   {
     msg_.data = "PCA, Vector encoding...";
     server_status_.publish(msg_);
-    classifier_->Classify(hog_mat,video_list);
+    classifier_->Classify(hog_mat, video_list);
   }
 
   // release

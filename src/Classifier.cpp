@@ -9,20 +9,48 @@
 #include "AndroidDevice.h"
 #include "Classifier.h"
 
+namespace fs = boost::filesystem;
+
 //----------------------------------------------------------------------------------
 // Classifier
 //----------------------------------------------------------------------------------
-Classifier::Classifier(ros::NodeHandle* nh):
-    nh_(nh)
+Classifier::Classifier(ros::NodeHandle* nh, int encoding_mode) :
+    nh_(nh), encoding_mode_(encoding_mode)
 {
   ROS_INFO("Classifier constructor");
 
-  // initialize SVM, PCA, and Fisher Vector encoder
-  LoadPCA(pca_.eigenvectors, pca_.eigenvalues, pca_.mean, PCA_DIR);
+  fs::path pca_path, encode_path, svm_path;
 
-  // TODO
-  fisher_ = FisherVector(GMM_DIR);
-  model_ = svm_load_model(SVM_DIR);
+  switch(encoding_mode_)
+  {
+  case 0:
+      pca_path = FISHER_PARAMS_DIR / fs::path("eigen.pca");
+      encode_path = FISHER_PARAMS_DIR / fs::path("fisher.gmm");
+      svm_path = FISHER_PARAMS_DIR / fs::path("svm.model");
+      std::cout << pca_path << std::endl;
+      std::cout << encode_path << std::endl;
+      std::cout << svm_path << std::endl;
+      LoadPCA(pca_.eigenvectors, pca_.eigenvalues, pca_.mean, pca_path.string().c_str());
+      fisher_ = FisherVector(encode_path.string().c_str());
+      model_ = svm_load_model(svm_path.string().c_str());
+      break;
+  case 1:
+      pca_path = VLAD_PARAMS_DIR / fs::path("eigen.pca");
+      encode_path = VLAD_PARAMS_DIR / fs::path("vlad.kmeans");
+      svm_path = VLAD_PARAMS_DIR / fs::path("svm.model");
+      LoadPCA(pca_.eigenvectors, pca_.eigenvalues, pca_.mean, pca_path.string().c_str());
+      vlad_ = VLAD(encode_path.string().c_str());
+      model_ = svm_load_model(svm_path.string().c_str());
+      break;
+  case 2:
+      pca_path = BOVW_PARAMS_DIR / fs::path("eigen.pca");
+      encode_path = BOVW_PARAMS_DIR / fs::path("bovw.kmeans");
+      svm_path = BOVW_PARAMS_DIR / fs::path("svm.model");
+      LoadPCA(pca_.eigenvectors, pca_.eigenvalues, pca_.mean, pca_path.string().c_str());
+      bovw_ = BoVW(encode_path.string().c_str());
+      model_ = svm_load_model(svm_path.string().c_str());
+      break;
+  }
 
   // status publisher
   status_ = nh_->advertise<std_msgs::String>("user_activity", 1);
@@ -173,25 +201,4 @@ void LoadPCA(cv::Mat& eigenvectors, cv::Mat& eigenvalues, cv::Mat& mean, const c
   ifs.read((char*)mean.data, mean.elemSize() * mean.total());
 
   ifs.close();
-}
-
-//----------------------------------------------------------------------------------
-bool LoadMat(const std::string& file_dir, cv::Mat& data)
-{
-  std::ifstream ifs(file_dir.c_str(), std::ios_base::binary);
-  if (!ifs)
-  {
-    return false;
-  }
-
-  int rows, cols, type;
-  ifs.read((char*)&rows, sizeof(int));
-  ifs.read((char*)&cols, sizeof(int));
-  ifs.read((char*)&type, sizeof(int));
-  data.release();
-  data.create(rows, cols, type);
-  ifs.read((char*)data.data, data.elemSize() * data.total());
-
-  ifs.close();
-  return true;
 }

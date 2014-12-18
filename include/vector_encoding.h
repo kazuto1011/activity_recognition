@@ -93,6 +93,7 @@ private:
     vl_size dimension;   // data dimension
 public:
     BoVW();
+    BoVW(const char* file_dir);
     ~BoVW();
     void KmeansCluster(cv::Mat& data, int  num_visualwords);
     cv::Mat BuidHistogram(cv::Mat& dataToBuild);

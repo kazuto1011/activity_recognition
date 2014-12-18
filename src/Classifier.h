@@ -20,6 +20,7 @@ private:
   std_msgs::String msg_;
   ros::Publisher status_;
 
+  int encoding_mode_;
   cv::PCA pca_;
   FisherVector fisher_;
   VLAD vlad_;
@@ -30,7 +31,7 @@ private:
   cv::Mat data_;
 
 public:
-  Classifier(ros::NodeHandle* nh);
+  Classifier(ros::NodeHandle* nh, int encoding_mode);
   ~Classifier();
   void Classify(cv::Mat& data, std::vector<Video>& video_list);
 };
@@ -40,6 +41,5 @@ cv::Mat GetFisherMat(FisherVector& fisherVec, cv::Mat& comp_mat, std::vector<Vid
 cv::Mat GetVLADMat(VLAD& vlad, cv::Mat& comp_mat, std::vector<Video>& video_list);
 cv::Mat GetBoVWMat(BoVW& bovw, cv::Mat& comp_mat, std::vector<Video>& video_list);
 void LoadPCA(cv::Mat& eigenvectors, cv::Mat& eigenvalues, cv::Mat& mean, const char* file_dir);
-bool LoadMat(const std::string& file_dir, cv::Mat& data);
 
 #endif /* CV_TEST_INCLUDE_CV_TEST_CLASSIFIER_H_ */

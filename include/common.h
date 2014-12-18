@@ -60,11 +60,14 @@ extern "C" {
 #define NUM_FRAME  150
 #define FPS        30
 
-#define SVM_DIR    "/home/kazuto/catkin_ws/src/activity_recognition/params/fisher_vector/svm.model"
-#define GMM_DIR    "/home/kazuto/catkin_ws/src/activity_recognition/params/fisher_vector/fisher.gmm"
-#define PCA_DIR    "/home/kazuto/catkin_ws/src/activity_recognition/params/fisher_vector/eigen.pca"
+#define FISHER_PARAMS_DIR "/home/kazuto/catkin_ws/src/activity_recognition/params/fisher_vector"
+#define VLAD_PARAMS_DIR   "/home/kazuto/catkin_ws/src/activity_recognition/params/vlad"
+#define BOVW_PARAMS_DIR   "/home/kazuto/catkin_ws/src/activity_recognition/params/bag_of_visual_words"
+
 #define OUTPUT_DIR "/home/kazuto/catkin_ws/src/activity_recognition/video/moverio.avi"
 #define TEXT_DIR   "/home/kazuto/catkin_ws/src/activity_recognition/moverio.txt"
+
+#define INIT_ENCODE "Classifier init\n---\n0: Fisher Vector(defalut)\n1: Vector of Locally Aggregated Descriptors\n2: Bag of Visual Words\n---\n"
 
 //----------------------------------------------------------------------------------
 // video class

@@ -29,8 +29,7 @@ public:
   ServiceRobot(ros::NodeHandle* nh);
   ~ServiceRobot();
   void setActivity(const std_msgs::StringConstPtr& msg);
-  bool voiceCallBack(activity_recognition::user_voice::Request &req,
-                     activity_recognition::user_voice::Response &res);
+  bool voiceCallBack(activity_recognition::user_voice::Request &req, activity_recognition::user_voice::Response &res);
   void robotTTS(int service);
 };
 

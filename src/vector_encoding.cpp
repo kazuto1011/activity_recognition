@@ -86,11 +86,9 @@ cv::Mat FisherVector::FvEncode(cv::Mat &data)
    *  - Square root
    *  - L2 normalization
    */
-  vl_fisher_encode(encoded_vec.data, data_type,
-                   means, dimension, num_clusters, covariances, priors,
-                   data.data, data.rows,
-                   VL_FISHER_FLAG_IMPROVED
-                   );
+  vl_fisher_encode(encoded_vec.data, data_type, means, dimension, num_clusters, covariances, priors, data.data,
+                   data.rows,
+                   VL_FISHER_FLAG_IMPROVED);
 
   return encoded_vec;
 }
@@ -205,11 +203,8 @@ cv::Mat VLAD::VladEncode(cv::Mat& data)
    * VL_VLAD_FLAG_NORMALIZE_COMPONENTS
    */
   cv::Mat encoded_vec = cv::Mat_<float>(1, (int)vlad_dimension);
-  vl_vlad_encode(encoded_vec.data, data_type,
-                 means, dimension, num_centers,
-                 data.data, data.rows,
-                 assignments.data,
-                 VL_VLAD_FLAG_SQUARE_ROOT | VL_VLAD_FLAG_NORMALIZE_COMPONENTS);
+  vl_vlad_encode(encoded_vec.data, data_type, means, dimension, num_centers, data.data, data.rows, assignments.data,
+  VL_VLAD_FLAG_SQUARE_ROOT | VL_VLAD_FLAG_NORMALIZE_COMPONENTS);
 
   return encoded_vec;
 }
@@ -252,23 +247,21 @@ VLAD::~VLAD()
 // create a new BoVW instance
 // with a k-means that clustering given data
 //----------------------------------------------------------------------------------
-BoVW::BoVW() {
+BoVW::BoVW()
+{
   this->data_type = VL_TYPE_FLOAT;
   this->distance_type = VlDistanceL2;
 }
 
-void BoVW::KmeansCluster(cv::Mat& data, int num_visualwords) {
+void BoVW::KmeansCluster(cv::Mat& data, int num_visualwords)
+{
   this->kmeans = vl_kmeans_new(data_type, distance_type);
   this->num_centers = num_visualwords;
   this->dimension = data.cols;
   this->bovw_dimension = num_centers;
 
   // k-means
-  vl_kmeans_cluster(kmeans,
-  data.data,
-  dimension,
-  data.rows,
-  num_centers);
+  vl_kmeans_cluster(kmeans, data.data, dimension, data.rows, num_centers);
 
   this->means = (float*)vl_kmeans_get_centers(kmeans);
 }
@@ -276,19 +269,22 @@ void BoVW::KmeansCluster(cv::Mat& data, int num_visualwords) {
 // create a new BoVW instance
 // with a k-means loading external params
 //----------------------------------------------------------------------------------
-VLAD::VLAD(const char* file_dir) {
+BoVW::BoVW(const char* file_dir)
+{
   std::ifstream ifs(file_dir, std::ios_base::binary);
-  if (!ifs)  std::cout << "Failed to open the file" << std::endl;
+  if (!ifs)
+    std::cout << "Failed to open the file" << std::endl;
 
   ifs.read((char*)&data_type, sizeof(vl_type));
   ifs.read((char*)&distance_type, sizeof(VlVectorComparisonType));
   ifs.read((char*)&dimension, sizeof(vl_size));
   ifs.read((char*)&num_centers, sizeof(vl_size));
 
-  this->vlad_dimension = dimension * num_centers;
+  this->bovw_dimension = dimension * num_centers;
 
-  this->means = (float*)vl_malloc(sizeof(float)* num_centers * dimension);
-  for (unsigned int i = 0; i < dimension * num_centers; i++) {
+  this->means = (float*)vl_malloc(sizeof(float) * num_centers * dimension);
+  for (unsigned int i = 0; i < dimension * num_centers; i++)
+  {
     ifs.read((char*)&means[i], sizeof(float));
   }
 
@@ -323,7 +319,7 @@ cv::Mat BoVW::BuidHistogram(cv::Mat& data)
     l1_sum += tmp;
 #endif
 #if L2_NORM
-    l2_sum += tmp*tmp;
+    l2_sum += tmp * tmp;
 #endif
   }
 
