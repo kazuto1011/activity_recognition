@@ -249,26 +249,54 @@ VLAD::~VLAD()
 // Bag of Visual Words
 //----------------------------------------------------------------------------------
 
-// create a new VLAD instance
+// create a new BoVW instance
 // with a k-means that clustering given data
 //----------------------------------------------------------------------------------
-BoVW::BoVW()
-{
+BoVW::BoVW() {
   this->data_type = VL_TYPE_FLOAT;
   this->distance_type = VlDistanceL2;
 }
 
-void BoVW::KmeansCluster(cv::Mat& data, int num_visualwords)
-{
+void BoVW::KmeansCluster(cv::Mat& data, int num_visualwords) {
   this->kmeans = vl_kmeans_new(data_type, distance_type);
   this->num_centers = num_visualwords;
   this->dimension = data.cols;
   this->bovw_dimension = num_centers;
 
   // k-means
-  vl_kmeans_cluster(kmeans, data.data, dimension, data.rows, num_centers);
+  vl_kmeans_cluster(kmeans,
+  data.data,
+  dimension,
+  data.rows,
+  num_centers);
 
   this->means = (float*)vl_kmeans_get_centers(kmeans);
+}
+
+// create a new BoVW instance
+// with a k-means loading external params
+//----------------------------------------------------------------------------------
+VLAD::VLAD(const char* file_dir) {
+  std::ifstream ifs(file_dir, std::ios_base::binary);
+  if (!ifs)  std::cout << "Failed to open the file" << std::endl;
+
+  ifs.read((char*)&data_type, sizeof(vl_type));
+  ifs.read((char*)&distance_type, sizeof(VlVectorComparisonType));
+  ifs.read((char*)&dimension, sizeof(vl_size));
+  ifs.read((char*)&num_centers, sizeof(vl_size));
+
+  this->vlad_dimension = dimension * num_centers;
+
+  this->means = (float*)vl_malloc(sizeof(float)* num_centers * dimension);
+  for (unsigned int i = 0; i < dimension * num_centers; i++) {
+    ifs.read((char*)&means[i], sizeof(float));
+  }
+
+  ifs.close();
+
+  // intialize the kmeans object and set the params
+  kmeans = vl_kmeans_new(data_type, distance_type);
+  vl_kmeans_set_centers(kmeans, means, dimension, num_centers);
 }
 
 // build histogram

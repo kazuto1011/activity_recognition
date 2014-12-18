@@ -29,7 +29,6 @@ extern "C" {
 
 // ROS
 #include <ros/ros.h>
-#include <ros/callback_queue.h>
 #include <std_msgs/String.h>
 #include <image_transport/image_transport.h>
 #include <compressed_image_transport/compressed_subscriber.h>
