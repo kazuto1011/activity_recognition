@@ -181,7 +181,7 @@ VLAD::VLAD(const char* file_dir)
   ifs.close();
 
   // intialize the kmeans object and set the params
-  kmeans = vl_kmeans_new(data_type, distance_type);
+  this->kmeans = vl_kmeans_new(data_type, distance_type);
   vl_kmeans_set_centers(kmeans, means, dimension, num_centers);
 }
 
@@ -204,7 +204,7 @@ cv::Mat VLAD::VladEncode(cv::Mat& data)
    */
   cv::Mat encoded_vec = cv::Mat_<float>(1, (int)vlad_dimension);
   vl_vlad_encode(encoded_vec.data, data_type, means, dimension, num_centers, data.data, data.rows, assignments.data,
-  VL_VLAD_FLAG_SQUARE_ROOT | VL_VLAD_FLAG_NORMALIZE_COMPONENTS);
+  VL_VLAD_FLAG_SQUARE_ROOT | VL_VLAD_FLAG_NORMALIZE_MASS);
 
   return encoded_vec;
 }
@@ -299,7 +299,7 @@ BoVW::BoVW(const char* file_dir)
 //----------------------------------------------------------------------------------
 cv::Mat BoVW::BuidHistogram(cv::Mat& data)
 {
-  cv::Mat indexes = cv::Mat_<unsigned int>(1, data.rows);
+  cv::Mat indexes = cv::Mat_<int>(1, data.rows);
 
   vl_kmeans_quantize(kmeans, (vl_uint32*)indexes.data, NULL, data.data, data.rows);
 
