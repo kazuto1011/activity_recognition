@@ -22,9 +22,9 @@ private:
 
   int encoding_mode_;
   cv::PCA pca_;
-  FisherVector fisher_;
-  VLAD vlad_;
-  BoVW bovw_;
+  FisherVector* fisher_;
+  VLAD* vlad_;
+  BoVW* bovw_;
   struct svm_model* model_;
 
   std::vector<Video> video_list_;

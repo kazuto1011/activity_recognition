@@ -27,11 +27,8 @@ Classifier::Classifier(ros::NodeHandle* nh, int encoding_mode) :
       pca_path = FISHER_PARAMS_DIR / fs::path("eigen.pca");
       encode_path = FISHER_PARAMS_DIR / fs::path("fisher.gmm");
       svm_path = FISHER_PARAMS_DIR / fs::path("svm.model");
-      std::cout << pca_path << std::endl;
-      std::cout << encode_path << std::endl;
-      std::cout << svm_path << std::endl;
       LoadPCA(pca_.eigenvectors, pca_.eigenvalues, pca_.mean, pca_path.string().c_str());
-      fisher_ = FisherVector(encode_path.string().c_str());
+      fisher_ = new FisherVector(encode_path.string().c_str());
       model_ = svm_load_model(svm_path.string().c_str());
       break;
   case 1:
@@ -39,7 +36,7 @@ Classifier::Classifier(ros::NodeHandle* nh, int encoding_mode) :
       encode_path = VLAD_PARAMS_DIR / fs::path("vlad.kmeans");
       svm_path = VLAD_PARAMS_DIR / fs::path("svm.model");
       LoadPCA(pca_.eigenvectors, pca_.eigenvalues, pca_.mean, pca_path.string().c_str());
-      vlad_ = VLAD(encode_path.string().c_str());
+      vlad_ = new VLAD(encode_path.string().c_str());
       model_ = svm_load_model(svm_path.string().c_str());
       break;
   case 2:
@@ -47,7 +44,7 @@ Classifier::Classifier(ros::NodeHandle* nh, int encoding_mode) :
       encode_path = BOVW_PARAMS_DIR / fs::path("bovw.kmeans");
       svm_path = BOVW_PARAMS_DIR / fs::path("svm.model");
       LoadPCA(pca_.eigenvectors, pca_.eigenvalues, pca_.mean, pca_path.string().c_str());
-      bovw_ = BoVW(encode_path.string().c_str());
+      bovw_ = new BoVW(encode_path.string().c_str());
       model_ = svm_load_model(svm_path.string().c_str());
       break;
   }
@@ -69,7 +66,19 @@ void Classifier::Classify(cv::Mat& data, std::vector<Video>& video_list)
 {
   cv::Mat comp_mat = cv::Mat_<float>(data.rows, pca_.eigenvalues.rows);
   pca_.project(data, comp_mat);
-  data_ = GetFisherMat(fisher_, comp_mat, video_list);
+
+  switch(encoding_mode_)
+  {
+  case 0:
+      data_ = GetFisherMat(*fisher_, comp_mat, video_list);
+      break;
+  case 1:
+      data_ = GetVLADMat(*vlad_, comp_mat, video_list);
+      break;
+  case 2:
+      data_ = GetBoVWMat(*bovw_, comp_mat, video_list);
+      break;
+  }
 
   // store the test data
   svm_node* x_node = new svm_node[data_.cols + 1]; // "+1" means the malloc for the end
