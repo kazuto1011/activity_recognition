@@ -19,7 +19,7 @@ ServiceRobot::ServiceRobot(ros::NodeHandle* nh) :
   server_status_ = nh_->advertise<std_msgs::String>("server_status", 1);
   user_status_ = nh_->subscribe("user_activity", 1, &ServiceRobot::setActivity, this);
   voice_server_ = nh_->advertiseService("user_voice_command", &ServiceRobot::voiceCallBack, this);
-  tts_client_ = nh_->serviceClient<activity_recognition::robot_tts>("test");
+  tts_client_ = nh_->serviceClient<activity_recognition::robot_tts>("smartpal5_tts");
 }
 
 //----------------------------------------------------------------------------------

@@ -24,6 +24,7 @@ private:
   ros::Publisher server_status_;
   image_transport::ImageTransport it_;
   image_transport::Subscriber subscriber_;
+  image_transport::Subscriber screen_;
 
   Classifier* classifier_;
 
@@ -36,11 +37,13 @@ private:
   std::string ffmpeg_;
   std::string stipdet_;
   boost::circular_buffer<cv::Mat> img_buf_;
+  cv::Mat screen_img_;
 
 public:
   AndroidDevice(ros::NodeHandle* nh, Classifier* classifier);
   ~AndroidDevice();
   void storeMat(const sensor_msgs::ImageConstPtr& msg);
+  void showScreen(const sensor_msgs::ImageConstPtr& msg);
   void createVideo();
   bool detectFeatures();
 };

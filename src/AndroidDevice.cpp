@@ -24,6 +24,7 @@ AndroidDevice::AndroidDevice(ros::NodeHandle* nh, Classifier* classifier) :
   // image subscriber
   image_transport::TransportHints hints("compressed", ros::TransportHints());
   subscriber_ = it_.subscribe("moverio/camera", 1, &AndroidDevice::storeMat, this, hints);
+  screen_ = it_.subscribe ("moverio/screen", 1, &AndroidDevice::showScreen, this, hints);
 
   // user status publisher
   server_status_ = nh_->advertise<std_msgs::String>("server_status", 1);
@@ -71,6 +72,7 @@ AndroidDevice::~AndroidDevice()
 void AndroidDevice::storeMat(const sensor_msgs::ImageConstPtr& msg)
 {
   cv::Mat img;
+  cv::Mat roi;
 
   // cv_bridge conversion; sensor_msgs/Image -> cv::Mat
   try
@@ -84,8 +86,13 @@ void AndroidDevice::storeMat(const sensor_msgs::ImageConstPtr& msg)
 
   // Show the received image
   cv::cvtColor(img, img, CV_GRAY2BGR);
-  cv::imshow("cv_moverio", img);
-  cv::waitKey(10);
+
+  if (!screen_img_.empty()) {
+    roi = cv::Mat(screen_img_, cv::Rect(30, 86, img.cols, img.rows));
+    img.copyTo(roi);
+    cv::imshow("cv_moverio", screen_img_);
+    cv::waitKey(10);
+  }
 
   // circular buffer for image
   img_buf_.push_back(img);
@@ -95,6 +102,25 @@ void AndroidDevice::storeMat(const sensor_msgs::ImageConstPtr& msg)
     flag = false;
     boost::thread video_thread(&AndroidDevice::createVideo, this);
   }
+}
+
+//----------------------------------------------------------------------------------
+void AndroidDevice::showScreen(const sensor_msgs::ImageConstPtr& msg)
+{
+  cv::Mat img;
+
+  // cv_bridge conversion; sensor_msgs/Image -> cv::Mat
+  try
+  {
+    img = cv_bridge::toCvShare(msg, "mono8")->image;
+  }
+  catch (cv_bridge::Exception& e)
+  {
+    ROS_ERROR("could not convert from '%s' to 'mono8'.", msg->encoding.c_str());
+  }
+
+  cv::cvtColor(img, img, CV_GRAY2BGR);
+  img.copyTo(screen_img_);
 }
 
 //----------------------------------------------------------------------------------
