@@ -52,7 +52,7 @@ AndroidDevice::AndroidDevice(ros::NodeHandle* nh, Classifier* classifier) :
   // STIP detection
   // input list file
   stipdet_ += " -i ";
-  stipdet_ += "~/catkin_ws/src/activity_recognition/video_list.txt";
+  stipdet_ += "~/catkin_ws/src/activity_recognition/video/video_list.txt";
   // input video path
   stipdet_ += " -vpath ";
   stipdet_ += "~/catkin_ws/src/activity_recognition/video/";

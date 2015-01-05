@@ -45,29 +45,37 @@ extern "C" {
 #include <boost/circular_buffer.hpp>
 
 // LibSVM
-#include "svm.h"
+#include "libsvm/svm.h"
 
 // BoW, Fisher Vector, VLAD
 #include "vector_encoding.h"
 
-#define EXT        ".txt"
-#define HOG_DIM    72
-#define HOF_DIM    90
-#define HOGHOF_DIM 162
-#define FEAT_DIM   HOG_DIM
+//----------------------------------------------------------------------------------
+// const
+//----------------------------------------------------------------------------------
+// parameters for feature representation
+const std::string EXT = ".txt";
+const int HOG_DIM = 72;
+const int HOF_DIM = 90;
+const int HOGHOF_DIM = 162;
+const int FEAT_DIM = HOG_DIM;
 
 // parameters for cv::VideoWriter
-#define NUM_FRAME  150
-#define FPS        30
+const int NUM_FRAME = 150;
+const int FPS = 30;
 
-#define FISHER_PARAMS_DIR "/home/kazuto/catkin_ws/src/activity_recognition/params/fisher_vector"
-#define VLAD_PARAMS_DIR   "/home/kazuto/catkin_ws/src/activity_recognition/params/vlad"
-#define BOVW_PARAMS_DIR   "/home/kazuto/catkin_ws/src/activity_recognition/params/bag_of_visual_words"
+namespace fs = boost::filesystem;
 
-#define OUTPUT_DIR "/home/kazuto/catkin_ws/src/activity_recognition/video/moverio.avi"
-#define TEXT_DIR   "/home/kazuto/catkin_ws/src/activity_recognition/moverio.txt"
+// directory paths
+const fs::path FISHER_PARAMS_DIR("/home/kazuto/catkin_ws/src/activity_recognition/params/fisher_vector");
+const fs::path VLAD_PARAMS_DIR("/home/kazuto/catkin_ws/src/activity_recognition/params/vlad");
+const fs::path BOVW_PARAMS_DIR("/home/kazuto/catkin_ws/src/activity_recognition/params/bag_of_visual_words");
 
-#define INIT_ENCODE "Classifier init\n---\n0: Fisher Vector(defalut)\n1: Vector of Locally Aggregated Descriptors\n2: Bag of Visual Words\n---\n"
+const std::string OUTPUT_DIR = "/home/kazuto/catkin_ws/src/activity_recognition/video/moverio.avi";
+const char TEXT_DIR[] = "/home/kazuto/catkin_ws/src/activity_recognition/moverio.txt";
+
+// init description
+const std::string INIT_ENCODE = "Classifier init\n---\n0: Fisher Vector(defalut)\n1: Vector of Locally Aggregated Descriptors\n2: Bag of Visual Words\n---\n";
 
 //----------------------------------------------------------------------------------
 // video class

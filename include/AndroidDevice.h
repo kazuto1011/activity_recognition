@@ -48,4 +48,4 @@ public:
   bool detectFeatures();
 };
 
-#endif /* CV_TEST_INCLUDE_CV_TEST_ANDROIDDEV_H_ */
+#endif /* _ANDROIDDEV_H_ */

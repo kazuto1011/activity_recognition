@@ -52,19 +52,21 @@ set(VLFeat_INCLUDE_DIRS "~/vlfeat-0.9.19")
 set(VLFeat_LIBRARY "~/vlfeat-0.9.19/bin/glnxa64/libvl.so")
 
 include_directories(
+  ${PROJECT_SOURCE_DIR}
   ${PROJECT_SOURCE_DIR}/include
   ${VLFeat_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 
+## server node
 add_executable(activity_recognition_server
   src/activity_recognition_server.cpp
-  src/svm.cpp
   src/vector_encoding.cpp
   src/Classifier.cpp
   src/AndroidDevice.cpp
   src/ServiceRobot.cpp
+  libsvm/svm.cpp
 )
 add_dependencies(activity_recognition_server activity_recognition_generate_messages_cpp)
 target_link_libraries(activity_recognition_server
@@ -73,6 +75,7 @@ target_link_libraries(activity_recognition_server
   ${catkin_LIBRARIES}
 )
 
+## smartpal tts for demo
 add_executable(virtual_smartpal
   src/virtual_smartpal.cpp
 )

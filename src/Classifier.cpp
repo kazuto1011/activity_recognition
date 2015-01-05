@@ -24,25 +24,25 @@ Classifier::Classifier(ros::NodeHandle* nh, int encoding_mode) :
   switch(encoding_mode_)
   {
   case 0:
-      pca_path = FISHER_PARAMS_DIR / fs::path("eigen.pca");
+      pca_path    = FISHER_PARAMS_DIR / fs::path("eigen.pca");
       encode_path = FISHER_PARAMS_DIR / fs::path("fisher.gmm");
-      svm_path = FISHER_PARAMS_DIR / fs::path("svm.model");
+      svm_path    = FISHER_PARAMS_DIR / fs::path("svm.model");
       LoadPCA(pca_.eigenvectors, pca_.eigenvalues, pca_.mean, pca_path.string().c_str());
       fisher_ = new FisherVector(encode_path.string().c_str());
       model_ = svm_load_model(svm_path.string().c_str());
       break;
   case 1:
-      pca_path = VLAD_PARAMS_DIR / fs::path("eigen.pca");
+      pca_path    = VLAD_PARAMS_DIR / fs::path("eigen.pca");
       encode_path = VLAD_PARAMS_DIR / fs::path("vlad.kmeans");
-      svm_path = VLAD_PARAMS_DIR / fs::path("svm.model");
+      svm_path    = VLAD_PARAMS_DIR / fs::path("svm.model");
       LoadPCA(pca_.eigenvectors, pca_.eigenvalues, pca_.mean, pca_path.string().c_str());
       vlad_ = new VLAD(encode_path.string().c_str());
       model_ = svm_load_model(svm_path.string().c_str());
       break;
   case 2:
-      pca_path = BOVW_PARAMS_DIR / fs::path("eigen.pca");
+      pca_path    = BOVW_PARAMS_DIR / fs::path("eigen.pca");
       encode_path = BOVW_PARAMS_DIR / fs::path("bovw.kmeans");
-      svm_path = BOVW_PARAMS_DIR / fs::path("svm.model");
+      svm_path    = BOVW_PARAMS_DIR / fs::path("svm.model");
       LoadPCA(pca_.eigenvectors, pca_.eigenvalues, pca_.mean, pca_path.string().c_str());
       bovw_ = new BoVW(encode_path.string().c_str());
       model_ = svm_load_model(svm_path.string().c_str());
