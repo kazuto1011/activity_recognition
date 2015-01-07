@@ -280,7 +280,7 @@ BoVW::BoVW(const char* file_dir)
   ifs.read((char*)&dimension, sizeof(vl_size));
   ifs.read((char*)&num_centers, sizeof(vl_size));
 
-  this->bovw_dimension = dimension * num_centers;
+  this->bovw_dimension = num_centers;
 
   this->means = (float*)vl_malloc(sizeof(float) * num_centers * dimension);
   for (unsigned int i = 0; i < dimension * num_centers; i++)
@@ -303,10 +303,7 @@ cv::Mat BoVW::BuidHistogram(cv::Mat& data)
 
   vl_kmeans_quantize(kmeans, (vl_uint32*)indexes.data, NULL, data.data, data.rows);
 
-#if L1_NORM | L2_NORM
-  float l1_sum = 0.;
   float l2_sum = 0.;
-#endif
 
   float tmp;
 
@@ -315,29 +312,16 @@ cv::Mat BoVW::BuidHistogram(cv::Mat& data)
   for (int i = 0; i < data.rows; i++)
   {
     tmp = ++(builtHist.at<float>(0, indexes.at<unsigned int>(0, i)));
-#if L1_NORM
-    l1_sum += tmp;
-#endif
-#if L2_NORM
     l2_sum += tmp * tmp;
-#endif
   }
 
-#if L1_NORM
-  for (unsigned int i = 0; i < bovw_dimension; i++)
-  {
-    builtHist.at<float>(0, i) /= l1_sum;
-  }
-#endif
-
-#if L2_NORM
   l2_sum = vl_sqrt_f(l2_sum);
   l2_sum = VL_MAX(l2_sum, 1e-12);
+
   for (unsigned int i = 0; i < bovw_dimension; i++)
   {
     builtHist.at<float>(0, i) /= l2_sum;
   }
-#endif
 
   return builtHist;
 }

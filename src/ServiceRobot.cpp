@@ -53,6 +53,7 @@ void ServiceRobot::setActivity(const std_msgs::StringConstPtr& msg)
 }
 
 //----------------------------------------------------------------------------------
+// TODO: refering the tms database
 bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
                                  activity_recognition::user_voice::Response &res)
 {
