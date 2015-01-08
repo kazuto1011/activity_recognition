@@ -3,6 +3,7 @@
 
 bool robotTTS(activity_recognition::robot_tts::Request &req, activity_recognition::robot_tts::Response &res)
 {
+#if 0 //original
   char cmd[26];
   char tts[128];
   char say[14];
@@ -15,6 +16,19 @@ bool robotTTS(activity_recognition::robot_tts::Request &req, activity_recognitio
   system(say);
 
   res.result = 1;
+#else
+  std::string cmd = "pico2wave --wave ~/say.wav ";
+  std::string say = "aplay ~/say.wav";
+  std::string tts = cmd + "\"" + req.text + "\"";
+
+  ROS_INFO("Text to speech: %s", tts.c_str());
+
+  system(tts.c_str());
+  system(say.c_str());
+
+  res.result = 1;
+  return true;
+#endif
 }
 
 int main(int argc, char** argv)

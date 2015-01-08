@@ -43,6 +43,7 @@ extern "C" {
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/circular_buffer.hpp>
+#include <boost/xpressive/xpressive.hpp>
 
 // LibSVM
 #include "libsvm/svm.h"
