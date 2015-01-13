@@ -1,15 +1,16 @@
 /*
  * ClassifierNodelet.cpp
  *
- *  Created on: Jan 9, 2014
+ *  Created on: Jan 9, 2015
  *      Author: kazuto
  */
 
 #include "Classifier.h"
-#include "AndroidDevice.h"
+#include "FeatureDescriptor.h"
 #include "ServiceRobot.h"
 
 #include <boost/shared_ptr.hpp>
+
 #include <nodelet/nodelet.h>
 #include <pluginlib/class_list_macros.h>
 
@@ -18,7 +19,6 @@ namespace activity_recognition {
 //----------------------------------------------------------------------------------
 // Classifier nodelet
 //----------------------------------------------------------------------------------
-Classifier* classifier_;
 
 class ClassifierNodelet : public nodelet::Nodelet
 {
@@ -26,46 +26,50 @@ private:
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
   int encoding_mode_;
+  boost::shared_ptr<Classifier> classifier_;
 
 public:
   virtual void onInit()
   {
     NODELET_INFO("Classifier nodelet");
 
+    ros::AsyncSpinner spinner(0);
     encoding_mode_ = 0;
     nh_ = getMTNodeHandle();
     nh_private_ = getMTPrivateNodeHandle();
+    classifier_.reset(new Classifier(&nh_, encoding_mode_));
 
-    classifier_ = new Classifier(&nh_, encoding_mode_);
+    spinner.start();
   }
 };
 
-PLUGINLIB_DECLARE_CLASS(activity_recognition, ClassifierNodelet,
-                        activity_recognition::ClassifierNodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(activity_recognition::ClassifierNodelet, nodelet::Nodelet)
 
 //----------------------------------------------------------------------------------
 // Android device nodelet
 //----------------------------------------------------------------------------------
-class AndroidDeviceNodelet : public nodelet::Nodelet
+class FeatureDescriptorNodelet : public nodelet::Nodelet
 {
 private:
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
-  AndroidDevice* android_device_;
+  boost::shared_ptr<FeatureDescriptor> descriptor_;
 
 public:
   virtual void onInit()
   {
-    NODELET_INFO("Android device nodelet");
+    NODELET_INFO("Featuredescriptor nodelet");
+
+    ros::AsyncSpinner spinner(0);
     nh_ = getMTNodeHandle();
     nh_private_ = getMTPrivateNodeHandle();
+    descriptor_.reset(new FeatureDescriptor(&nh_));
 
-    android_device_ = new AndroidDevice(&nh_, classifier_);
+    spinner.start();
   }
 };
 
-PLUGINLIB_DECLARE_CLASS(activity_recognition, AndroidDeviceNodelet,
-                        activity_recognition::AndroidDeviceNodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(activity_recognition::FeatureDescriptorNodelet, nodelet::Nodelet)
 
 //----------------------------------------------------------------------------------
 // ServiceRobot nodelet
@@ -75,20 +79,21 @@ class ServiceRobotNodelet : public nodelet::Nodelet
 private:
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
-  ServiceRobot* service_robot_;
+  boost::shared_ptr<ServiceRobot> robot_;
 
 public:
   virtual void onInit()
   {
     NODELET_INFO("ServiceRobot nodelet");
 
+    ros::AsyncSpinner spinner(0);
     nh_ = getMTNodeHandle();
     nh_private_ = getMTPrivateNodeHandle();
+    robot_.reset(new ServiceRobot(&nh_));
 
-    service_robot_ = new ServiceRobot(&nh_);
+    spinner.start();
   }
 };
 
-PLUGINLIB_DECLARE_CLASS(activity_recognition, ServiceRobotNodelet,
-                        activity_recognition::ServiceRobotNodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(activity_recognition::ServiceRobotNodelet, nodelet::Nodelet)
 }

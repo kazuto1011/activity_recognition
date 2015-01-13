@@ -43,7 +43,6 @@ extern "C" {
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/circular_buffer.hpp>
-#include <boost/xpressive/xpressive.hpp>
 
 // LibSVM
 #include "libsvm/svm.h"
@@ -73,7 +72,7 @@ const fs::path VLAD_PARAMS_DIR("/home/kazuto/catkin_ws/src/activity_recognition/
 const fs::path BOVW_PARAMS_DIR("/home/kazuto/catkin_ws/src/activity_recognition/params/bag_of_visual_words");
 
 const std::string OUTPUT_DIR = "/home/kazuto/catkin_ws/src/activity_recognition/video/moverio.avi";
-const char TEXT_DIR[] = "/home/kazuto/catkin_ws/src/activity_recognition/moverio.txt";
+const std::string TEXT_DIR   = "/home/kazuto/catkin_ws/src/activity_recognition/moverio.txt";
 
 // init description
 const std::string INIT_ENCODE = "Classifier init\n---\n0: Fisher Vector(defalut)\n1: Vector of Locally Aggregated Descriptors\n2: Bag of Visual Words\n---\n";

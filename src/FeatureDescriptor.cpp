@@ -5,35 +5,37 @@
  *      Author: kazuto
  */
 
-#include "AndroidDevice.h"
 #include "common.h"
+#include "FeatureDescriptor.h"
 #include "Classifier.h"
 
 //----------------------------------------------------------------------------------
-// AndroidDevice
+// FeatureDescriptor
 //----------------------------------------------------------------------------------
-AndroidDevice::AndroidDevice(ros::NodeHandle* nh, Classifier* classifier) :
+FeatureDescriptor::FeatureDescriptor(ros::NodeHandle* nh) :
     nh_(nh), it_(*nh),
     fps_(FPS), size_(cv::Size(320, 240)), img_buf_(NUM_FRAME),
     flag(true), output_dir_(OUTPUT_DIR),
-    ffmpeg_("ffmpeg"), stipdet_("~/stip-2.0-linux/bin/stipdet"),
-    classifier_(classifier)
+    ffmpeg_("ffmpeg"), stipdet_("~/stip-2.0-linux/bin/stipdet")
 {
-  ROS_INFO("AndroidDevice constructor");
+  ROS_INFO("FeatureDescriptor constructor");
 
   // image subscriber
   image_transport::TransportHints hints("compressed", ros::TransportHints());
-  subscriber_ = it_.subscribe("moverio/camera", 1, &AndroidDevice::storeMat, this, hints);
-  screen_ = it_.subscribe ("moverio/screen", 1, &AndroidDevice::showScreen, this, hints);
+  camera_ = it_.subscribe("moverio/camera", 1, &FeatureDescriptor::imgBuffer, this, hints);
+  screen_ = it_.subscribe ("moverio/screen", 1, &FeatureDescriptor::screenForDemo, this, hints);
 
   // user status publisher
   server_status_ = nh_->advertise<std_msgs::String>("server_status", 1);
 
+  // classify service client
+  classify_client_ = nh_->serviceClient<activity_recognition::classify>("feature_directory", 1);
+
   // initialize a preview window
-  cv::namedWindow("cv_moverio");
+  cv::namedWindow("moverio");
   cv::startWindowThread();
   cv::Mat img = cv::imread("/home/kazuto/catkin_ws/src/activity_recognition/moverio.jpg", 1);
-  cv::imshow("cv_moverio", img);
+  cv::imshow("moverio", img);
 
   // ffmpeg operation
   // input source
@@ -62,14 +64,14 @@ AndroidDevice::AndroidDevice(ros::NodeHandle* nh, Classifier* classifier) :
 }
 
 //----------------------------------------------------------------------------------
-AndroidDevice::~AndroidDevice()
+FeatureDescriptor::~FeatureDescriptor()
 {
-  ROS_INFO("AndroidDevice destructor");
-  cv::destroyWindow("cv_moverio");
+  ROS_INFO("FeatureDescriptor destructor");
+  cv::destroyWindow("moverio");
 }
 
 //----------------------------------------------------------------------------------
-void AndroidDevice::storeMat(const sensor_msgs::ImageConstPtr& msg)
+void FeatureDescriptor::imgBuffer(const sensor_msgs::ImageConstPtr& msg)
 {
   cv::Mat img;
   cv::Mat roi;
@@ -90,7 +92,7 @@ void AndroidDevice::storeMat(const sensor_msgs::ImageConstPtr& msg)
   if (!screen_img_.empty()) {
     roi = cv::Mat(screen_img_, cv::Rect(30, 86, img.cols, img.rows));
     img.copyTo(roi);
-    cv::imshow("cv_moverio", screen_img_);
+    cv::imshow("moverio", screen_img_);
     cv::waitKey(10);
   }
 
@@ -100,12 +102,12 @@ void AndroidDevice::storeMat(const sensor_msgs::ImageConstPtr& msg)
   if (img_buf_.full() && flag)
   {
     flag = false;
-    boost::thread video_thread(&AndroidDevice::createVideo, this);
+    boost::thread video_thread(&FeatureDescriptor::generateVideo, this);
   }
 }
 
 //----------------------------------------------------------------------------------
-void AndroidDevice::showScreen(const sensor_msgs::ImageConstPtr& msg)
+void FeatureDescriptor::screenForDemo(const sensor_msgs::ImageConstPtr& msg)
 {
   cv::Mat img;
 
@@ -124,7 +126,7 @@ void AndroidDevice::showScreen(const sensor_msgs::ImageConstPtr& msg)
 }
 
 //----------------------------------------------------------------------------------
-void AndroidDevice::createVideo()
+void FeatureDescriptor::generateVideo()
 {
   video_writer_.open(output_dir_, CV_FOURCC_DEFAULT, fps_, size_);
 
@@ -136,104 +138,41 @@ void AndroidDevice::createVideo()
 
   // ffmpeg
   system(ffmpeg_.c_str());
-  ROS_INFO("created a new video & converted the codec");
+  ROS_INFO("Created a new video & converted the codec");
 
   this->detectFeatures();
   flag = true;
 }
 
 //----------------------------------------------------------------------------------
-bool AndroidDevice::detectFeatures()
+inline bool FeatureDescriptor::detectFeatures()
 {
-  msg_.data = "STIP detecting...";
-  server_status_.publish(msg_);
+  std_msgs::String msg;
+  activity_recognition::classify srv;
+
+  msg.data = "STIP detecting...";
+  server_status_.publish(msg);
 
   // stip detection
   system(stipdet_.c_str());
 
-  std::vector<Video> video_list;
-
-  int num_data = 1;
-  cv::Mat hog_mat = cv::Mat_<float>(num_data, HOG_DIM);
-  cv::Mat hof_mat = cv::Mat_<float>(num_data, HOF_DIM);
-  cv::Mat hoghof_mat = cv::Mat_<float>(num_data, HOGHOF_DIM);
-
-  msg_.data = "Loading features...";
-  server_status_.publish(msg_);
-
-  // file stream
-  std::ifstream ifs(TEXT_DIR);
-  if (!ifs)
+  srv.request.text = TEXT_DIR;
+  if (classify_client_.call(srv))
   {
-    ROS_ERROR("cannot open the file");
-    return false;
-  }
-
-  std::string buf;
-  int count[3] = {};
-  float tmp;
-  size_t p;
-
-  while (ifs && getline(ifs, buf))
-  {
-    if (buf.substr(0, 1) != "#")
+    switch(srv.response.result)
     {
-      count[0] = 9;  // info of the features
-      count[1] = 72; // the dimension of hog
-      count[2] = 1;  // check;
-
-      // point-type x y t sigma2 tau2 detector-confidence
-      // point-type y-norm x-norm t-norm y x t sigma2 tau2
-      while (((p = buf.find(' ')) != buf.npos) && count[0])
-      {
-        buf = buf.substr(p + 1);
-        count[0]--;
-      }
-
-      // dscr-hog(72)
-      count[0] = 0;
-      while (((p = buf.find(' ')) != buf.npos) && count[1])
-      {
-        tmp = atof(buf.substr(0, p + 1).c_str());
-        hog_mat.at<float>(num_data - 1, count[0]) = tmp;
-        hoghof_mat.at<float>(num_data - 1, count[0]++) = tmp;
-        buf = buf.substr(p + 1);
-        count[1]--;
-      }
-
-      // dscr-hof(90)
-      count[1] = count[0];
-      count[0] = 0;
-      while ((p = buf.find(' ')) != buf.npos)
-      {
-        tmp = atof(buf.substr(0, p + 1).c_str());
-        hof_mat.at<float>(num_data - 1, count[0]++) = tmp;
-        hoghof_mat.at<float>(num_data - 1, count[1]++) = tmp;
-        buf = buf.substr(p + 1);
-      }
-      hog_mat.resize(++num_data);
-      hof_mat.resize(num_data);
-      hoghof_mat.resize(num_data);
+    case 1:
+      ROS_INFO("Succeeded to classify");
+      break;
+    default:
+      ROS_ERROR("Failed to classify");
+      break;
     }
-  }
-
-  hog_mat.resize(--num_data);
-  hof_mat.resize(num_data);
-  hoghof_mat.resize(num_data);
-  video_list.push_back(Video(0, num_data, -1));
-
-  if (!count[2])
-  {
-    ROS_ERROR("no feature has detected");
+    return true;
   }
   else
   {
-    msg_.data = "PCA, Vector encoding...";
-    server_status_.publish(msg_);
-    classifier_->Classify(hog_mat, video_list);
+    ROS_ERROR("Failed to call service");
+    return false;
   }
-
-  // release
-  std::vector<Video>().swap(video_list);
-  return true;
 }

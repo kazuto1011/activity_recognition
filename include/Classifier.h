@@ -9,6 +9,7 @@
 #define _CLASSIFIER_H_
 
 #include "common.h"
+#include "activity_recognition/classify.h"
 
 //----------------------------------------------------------------------------------
 // Classifier
@@ -18,7 +19,9 @@ class Classifier
 private:
   ros::NodeHandle* nh_;
   std_msgs::String msg_;
-  ros::Publisher status_;
+  ros::Publisher user_status_;
+  ros::Publisher server_status_;
+  ros::ServiceServer classify_server_;
 
   int encoding_mode_;
   cv::PCA pca_;
@@ -33,13 +36,13 @@ private:
 public:
   Classifier(ros::NodeHandle* nh, int encoding_mode);
   ~Classifier();
-  void Classify(cv::Mat& data, std::vector<Video>& video_list);
+  bool Classify(activity_recognition::classify::Request &req,
+                activity_recognition::classify::Response &res);
+  std::string RestoreLabel(int label);
+  cv::Mat GetFisherMat(FisherVector& fisherVec, cv::Mat& comp_mat, std::vector<Video>& video_list);
+  cv::Mat GetVLADMat(VLAD& vlad, cv::Mat& comp_mat, std::vector<Video>& video_list);
+  cv::Mat GetBoVWMat(BoVW& bovw, cv::Mat& comp_mat, std::vector<Video>& video_list);
+  void LoadPCA(cv::Mat& eigenvectors, cv::Mat& eigenvalues, cv::Mat& mean, const char* file_dir);
 };
-
-std::string RestoreLabel(int label);
-cv::Mat GetFisherMat(FisherVector& fisherVec, cv::Mat& comp_mat, std::vector<Video>& video_list);
-cv::Mat GetVLADMat(VLAD& vlad, cv::Mat& comp_mat, std::vector<Video>& video_list);
-cv::Mat GetBoVWMat(BoVW& bovw, cv::Mat& comp_mat, std::vector<Video>& video_list);
-void LoadPCA(cv::Mat& eigenvectors, cv::Mat& eigenvalues, cv::Mat& mean, const char* file_dir);
 
 #endif /* CV_TEST_INCLUDE_CV_TEST_CLASSIFIER_H_ */

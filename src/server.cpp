@@ -7,7 +7,7 @@
 
 #include "common.h"
 
-#include "AndroidDevice.h"
+#include "FeatureDescriptor.h"
 #include "Classifier.h"
 #include "ServiceRobot.h"
 
@@ -26,11 +26,12 @@ int main(int argc, char** argv)
   std::cin >> encoding_mode;
 
   Classifier classifier(&nh, encoding_mode);
-  AndroidDevice android_device(&nh, &classifier);
+  FeatureDescriptor descriptor(&nh);
   ServiceRobot service_robot(&nh);
 
-  ROS_INFO("Multi threading");
   spinner.start();
+
+  ROS_INFO("Multi threading");
   ros::waitForShutdown();
 
   return 0;

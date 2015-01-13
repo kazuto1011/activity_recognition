@@ -6,7 +6,7 @@
  */
 
 #include "common.h"
-#include "AndroidDevice.h"
+#include "FeatureDescriptor.h"
 #include "Classifier.h"
 
 namespace fs = boost::filesystem;
@@ -50,7 +50,11 @@ Classifier::Classifier(ros::NodeHandle* nh, int encoding_mode) :
   }
 
   // status publisher
-  status_ = nh_->advertise<std_msgs::String>("user_activity", 1);
+  user_status_ = nh_->advertise<std_msgs::String>("user_activity", 1);
+  server_status_ = nh_->advertise<std_msgs::String>("server_status", 1);
+
+  // classidy service server
+  classify_server_ = nh_->advertiseService("feature_directory", &Classifier::Classify, this);
 }
 
 //----------------------------------------------------------------------------------
@@ -62,10 +66,100 @@ Classifier::~Classifier()
 }
 
 //----------------------------------------------------------------------------------
-void Classifier::Classify(cv::Mat& data, std::vector<Video>& video_list)
+bool Classifier::Classify(activity_recognition::classify::Request &req,
+                          activity_recognition::classify::Response &res)
 {
-  cv::Mat comp_mat = cv::Mat_<float>(data.rows, pca_.eigenvalues.rows);
-  pca_.project(data, comp_mat);
+  std_msgs::String msg;
+  std::vector<Video> video_list;
+
+  msg.data = "loading features..";
+  server_status_.publish(msg);
+
+  int num_data = 1;
+  cv::Mat hog_mat = cv::Mat_<float>(num_data, HOG_DIM);
+  cv::Mat hof_mat = cv::Mat_<float>(num_data, HOF_DIM);
+  cv::Mat hoghof_mat = cv::Mat_<float>(num_data, HOGHOF_DIM);
+
+  // file stream
+  std::ifstream ifs(req.text.c_str());
+  if (!ifs)
+  {
+    ROS_ERROR("cannot open the file");
+    res.result = 0;
+    return false;
+  }
+
+  std::string buf;
+  int count[3] = {};
+  float tmp;
+  size_t p;
+
+  while (ifs && getline(ifs, buf))
+  {
+    if (buf.substr(0, 1) != "#")
+    {
+      count[0] = 9;  // info of the features
+      count[1] = 72; // the dimension of hog
+      count[2] = 1;  // check;
+
+      // point-type x y t sigma2 tau2 detector-confidence
+      // point-type y-norm x-norm t-norm y x t sigma2 tau2
+      while (((p = buf.find(' ')) != buf.npos) && count[0])
+      {
+        buf = buf.substr(p + 1);
+        count[0]--;
+      }
+
+      // dscr-hog(72)
+      count[0] = 0;
+      while (((p = buf.find(' ')) != buf.npos) && count[1])
+      {
+        tmp = atof(buf.substr(0, p + 1).c_str());
+        hog_mat.at<float>(num_data - 1, count[0]) = tmp;
+        hoghof_mat.at<float>(num_data - 1, count[0]++) = tmp;
+        buf = buf.substr(p + 1);
+        count[1]--;
+      }
+
+      // dscr-hof(90)
+      count[1] = count[0];
+      count[0] = 0;
+      while ((p = buf.find(' ')) != buf.npos)
+      {
+        tmp = atof(buf.substr(0, p + 1).c_str());
+        hof_mat.at<float>(num_data - 1, count[0]++) = tmp;
+        hoghof_mat.at<float>(num_data - 1, count[1]++) = tmp;
+        buf = buf.substr(p + 1);
+      }
+      hog_mat.resize(++num_data);
+      hof_mat.resize(num_data);
+      hoghof_mat.resize(num_data);
+    }
+  }
+
+  hog_mat.resize(--num_data);
+  hof_mat.resize(num_data);
+  hoghof_mat.resize(num_data);
+  video_list.push_back(Video(0, num_data, -1));
+
+  if (!count[2])
+  {
+    ROS_ERROR("No feature has detected");
+    res.result = 0;
+    return false;
+  }
+  else
+  {
+    msg_.data = "Dimension reduction, Vector encoding...";
+    server_status_.publish(msg_);
+  }
+
+  // address-referencing
+  cv::Mat data_mat = hog_mat;
+
+  // Principal Component Analysis
+  cv::Mat comp_mat = cv::Mat_<float>(data_mat.rows, pca_.eigenvalues.rows);
+  pca_.project(data_mat, comp_mat);
 
   switch(encoding_mode_)
   {
@@ -104,15 +198,19 @@ void Classifier::Classify(cv::Mat& data, std::vector<Video>& video_list)
 
   // notify clients of the result
   msg_.data = RestoreLabel((int)predict_label);
-  status_.publish(msg_);
+  user_status_.publish(msg_);
 
   // release
   delete[] x_node;
   delete[] pre_prob;
+  std::vector<Video>().swap(video_list);
+
+  res.result = 1;
+  return true;
 }
 
 //----------------------------------------------------------------------------------
-std::string RestoreLabel(int label)
+inline std::string Classifier::RestoreLabel(int label)
 {
   switch (label)
   {
@@ -132,7 +230,7 @@ std::string RestoreLabel(int label)
 }
 
 //----------------------------------------------------------------------------------
-cv::Mat GetFisherMat(FisherVector& fisherVec, cv::Mat& comp_mat, std::vector<Video>& video_list)
+inline cv::Mat Classifier::GetFisherMat(FisherVector& fisherVec, cv::Mat& comp_mat, std::vector<Video>& video_list)
 {
   cv::Mat fisherMat = cv::Mat_<float>(video_list.size(), fisherVec.GetDimension());
 
@@ -149,7 +247,7 @@ cv::Mat GetFisherMat(FisherVector& fisherVec, cv::Mat& comp_mat, std::vector<Vid
 }
 
 //----------------------------------------------------------------------------------
-cv::Mat GetVLADMat(VLAD& vlad, cv::Mat& comp_mat, std::vector<Video>& video_list)
+inline cv::Mat Classifier::GetVLADMat(VLAD& vlad, cv::Mat& comp_mat, std::vector<Video>& video_list)
 {
   cv::Mat vladMat = cv::Mat_<float>(video_list.size(), vlad.GetDimension());
 
@@ -166,7 +264,7 @@ cv::Mat GetVLADMat(VLAD& vlad, cv::Mat& comp_mat, std::vector<Video>& video_list
 }
 
 //----------------------------------------------------------------------------------
-cv::Mat GetBoVWMat(BoVW& bovw, cv::Mat& comp_mat, std::vector<Video>& video_list)
+inline cv::Mat Classifier::GetBoVWMat(BoVW& bovw, cv::Mat& comp_mat, std::vector<Video>& video_list)
 {
   cv::Mat bovwMat = cv::Mat_<float>(video_list.size(), bovw.GetDimension());
 
@@ -183,7 +281,7 @@ cv::Mat GetBoVWMat(BoVW& bovw, cv::Mat& comp_mat, std::vector<Video>& video_list
 }
 
 //----------------------------------------------------------------------------------
-void LoadPCA(cv::Mat& eigenvectors, cv::Mat& eigenvalues, cv::Mat& mean, const char* file_dir)
+inline void Classifier::LoadPCA(cv::Mat& eigenvectors, cv::Mat& eigenvalues, cv::Mat& mean, const char* file_dir)
 {
   std::ifstream ifs(file_dir, std::ios_base::in | std::ios_base::binary);
 

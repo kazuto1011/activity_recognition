@@ -5,28 +5,24 @@
  *      Author: kazuto
  */
 
-#ifndef _ANDROIDDEV_H_
-#define _ANDROIDDEV_H_
+#ifndef _DESCRIPTOR_H_
+#define _DESCRIPTOR_H_
 
 #include "common.h"
-
-// forward declaration
-class Classifier;
+#include "activity_recognition/classify.h"
 
 //----------------------------------------------------------------------------------
-// AndroidDevice
+// FeatureDescriptor
 //----------------------------------------------------------------------------------
-class AndroidDevice
+class FeatureDescriptor
 {
 private:
   ros::NodeHandle* nh_;
-  std_msgs::String msg_;
   ros::Publisher server_status_;
+  ros::ServiceClient classify_client_;
   image_transport::ImageTransport it_;
-  image_transport::Subscriber subscriber_;
+  image_transport::Subscriber camera_;
   image_transport::Subscriber screen_;
-
-  Classifier* classifier_;
 
   cv::VideoWriter video_writer_;
   std::string output_dir_;
@@ -40,12 +36,12 @@ private:
   cv::Mat screen_img_;
 
 public:
-  AndroidDevice(ros::NodeHandle* nh, Classifier* classifier);
-  ~AndroidDevice();
-  void storeMat(const sensor_msgs::ImageConstPtr& msg);
-  void showScreen(const sensor_msgs::ImageConstPtr& msg);
-  void createVideo();
+  FeatureDescriptor(ros::NodeHandle* nh);
+  ~FeatureDescriptor();
+  void imgBuffer(const sensor_msgs::ImageConstPtr& msg);
+  void screenForDemo(const sensor_msgs::ImageConstPtr& msg);
+  void generateVideo();
   bool detectFeatures();
 };
 
-#endif /* _ANDROIDDEV_H_ */
+#endif /* _DESCRIPTOR_H_ */

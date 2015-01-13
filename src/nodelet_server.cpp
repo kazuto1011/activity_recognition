@@ -1,7 +1,7 @@
 /*
  * activity_recognition_server.cpp
  *
- *  Created on: Jan 9, 2014
+ *  Created on: Jan 9, 2015
  *      Author: kazuto
  */
 
@@ -13,8 +13,7 @@
 //----------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "server");
-  ros::AsyncSpinner spinner(0);
+  ros::init(argc, argv, "activity_recognition_server");
 
   // nodelet manager
   nodelet::Loader manager(true);
@@ -23,10 +22,8 @@ int main(int argc, char** argv)
 
   // load plugins
   manager.load("classifier", "activity_recognition::ClassifierNodelet", remappings, my_argv);
-  manager.load("android", "activity_recognition::AndroidDeviceNodelet", remappings, my_argv);
+  manager.load("descriptor", "activity_recognition::FeatureDescriptorNodelet", remappings, my_argv);
   manager.load("robot", "activity_recognition::ServiceRobotNodelet", remappings, my_argv);
-
-  spinner.start();
   ros::waitForShutdown();
 
   return 0;

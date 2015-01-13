@@ -28,6 +28,7 @@ add_service_files(
   FILES
   robot_tts.srv
   user_voice.srv
+  classify.srv
 )
 
 generate_messages(
@@ -67,7 +68,7 @@ include_directories(
 add_library(${PLUGIN_NAME}
   src/Nodelets.cpp
   src/Classifier.cpp
-  src/AndroidDevice.cpp
+  src/FeatureDescriptor.cpp
   src/ServiceRobot.cpp
   src/vector_encoding.cpp
   libsvm/svm.cpp
@@ -92,7 +93,7 @@ add_executable(activity_recognition_server
   src/server.cpp
   src/vector_encoding.cpp
   src/Classifier.cpp
-  src/AndroidDevice.cpp
+  src/FeatureDescriptor.cpp
   src/ServiceRobot.cpp
   libsvm/svm.cpp
 )
