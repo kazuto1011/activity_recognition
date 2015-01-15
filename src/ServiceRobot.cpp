@@ -19,6 +19,9 @@ ServiceRobot::ServiceRobot(ros::NodeHandle* nh) :
 
   // initialize the tag_list_
   tag_list_.push_back("water");
+  tag_list_.push_back("tea");
+  tag_list_.push_back("coffee");
+  tag_list_.push_back("pot");
 
 #if 0
   vec_itr itr = tag_list_.begin();
@@ -35,8 +38,7 @@ ServiceRobot::ServiceRobot(ros::NodeHandle* nh) :
   server_status_ = nh_->advertise<std_msgs::String>("server_status", 1);
   user_status_ = nh_->subscribe("user_activity", 1, &ServiceRobot::setActivity, this);
   voice_server_ = nh_->advertiseService("user_voice_command", &ServiceRobot::voiceCallBack, this);
-  //tts_client_ = nh_->serviceClient<activity_recognition::robot_tts>("smartpal5_tts");
-  tts_client_ = nh_->serviceClient<activity_recognition::robot_tts>("test");
+  tts_client_ = nh_->serviceClient<activity_recognition::robot_tts>("test"/* "smartpal5_tts" */);
   tms_db_client_ = nh_->serviceClient<tms_msg_db::TmsdbGetData>("/tms_db_reader/dbreader");
 
 }
@@ -50,10 +52,13 @@ ServiceRobot::~ServiceRobot()
 //----------------------------------------------------------------------------------
 void ServiceRobot::setActivity(const std_msgs::StringConstPtr& msg)
 {
+  sort_key_.clear();
+
   // assign a label
   if (!msg->data.compare("eat_a_meal"))
   {
     user_activity_ = 0;
+    sort_key_.push_back("tea");
   }
   else if (!msg->data.compare("gaze_at_a_robot"))
   {
@@ -63,6 +68,7 @@ void ServiceRobot::setActivity(const std_msgs::StringConstPtr& msg)
   else if (!msg->data.compare("gaze_at_a_tree"))
   {
     user_activity_ = 2;
+    sort_key_.push_back("pot");
   }
   else if (!msg->data.compare("look_around"))
   {
@@ -72,6 +78,7 @@ void ServiceRobot::setActivity(const std_msgs::StringConstPtr& msg)
   else if (!msg->data.compare("read_a_book"))
   {
     user_activity_ = 4;
+    sort_key_.push_back("coffee");
   }
   else
   {
@@ -151,7 +158,7 @@ void ServiceRobot::robotTTS(int service)
 }
 #else
 typedef std::vector<std::string>::iterator str_vec_itr;
-typedef std::vector<tms_msg_db::Tmsdb>::iterator tmsdb_vec_itr;
+typedef std::vector<tms_msg_db::Tmsdb>::iterator tmsdb_itr;
 
 //----------------------------------------------------------------------------------
 bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
@@ -159,7 +166,7 @@ bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
 {
   int TTS_mode = 0;
   std::string received_text = req.text;
-  std::vector<std::string> match_list;
+  std::vector<std::string> match_list, sort_key;
 
   std::cout << "-------------------------------------\n";
   ROS_INFO("Received: \033[1;32m%s\033[0m", received_text.c_str());
@@ -179,29 +186,7 @@ bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
     tms_msg_db::TmsdbGetData srv;
     for (str_vec_itr itr = match_list.begin(); itr != match_list.end(); itr++)
     {
-      if ((*itr)=="water")
-      {
-        switch(user_activity_)
-        {
-        case 0:
-          srv.request.tmsdb.tag = "tea";
-          break;
-        case 2:
-          srv.request.tmsdb.tag = "watering_can";
-          break;
-        case 4:
-          srv.request.tmsdb.tag = "coffee";
-          TTS_mode = 1;
-          break;
-        default:
-          TTS_mode = 2;
-          break;
-        }
-      }
-      else
-      {
-        srv.request.tmsdb.tag = *itr;
-      }
+      srv.request.tmsdb.tag = *itr;
 
       // send a requrst to get the object list
       if (tms_db_client_.call(srv))
@@ -214,7 +199,7 @@ bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
         return false;
       }
 
-      // if the response is empty
+      // state checking
       if (srv.response.tmsdb.empty())
       {
         ROS_INFO("No matched tag on database");
@@ -249,22 +234,38 @@ bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
 
   if (!object_list_.empty())
   {
-    // e.g "greentea_bottle" -> "green tea bottle"
-    for (tmsdb_vec_itr itr = object_list_.begin(); itr != object_list_.end(); itr++)
+    for (tmsdb_itr obj_itr = object_list_.begin(); obj_itr != object_list_.end(); obj_itr++)
     {
+      // e.g "greentea_bottle" -> "green tea bottle"
       size_t c;
       std::string space = " ";
-      while((c = itr->name.find_first_of("_")) != std::string::npos)
+      while((c = obj_itr->name.find_first_of("_")) != std::string::npos)
       {
-        itr->name.replace(c, space.length(), space);
+        obj_itr->name.replace(c, space.length(), space);
       }
-      if((c = itr->name.find("tea")) != std::string::npos)
+      if((c = obj_itr->name.find("tea")) != std::string::npos)
       {
-        itr->name.insert(c, " ");
+        obj_itr->name.insert(c, " ");
       }
     }
 
-    this->robotTTS(TTS_mode, object_list_[0].name);
+    compare_struct compare(this);
+    std::sort(object_list_.begin(), object_list_.end(), compare);
+
+    for (tmsdb_itr obj_itr = object_list_.begin(); obj_itr != object_list_.end(); obj_itr++)
+    {
+      ROS_INFO_STREAM("sorted: " << obj_itr->name);
+    }
+
+    // recommendation??
+    if (strstr(object_list_[0].name.c_str(), "coffee"))
+    {
+      this->robotTTS(1, object_list_[0].name);
+    }
+    else
+    {
+      this->robotTTS(TTS_mode, object_list_[0].name);
+    }
 
     res.result = 1;
   }
@@ -276,6 +277,7 @@ bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
   }
 
   std::vector<std::string>().swap(match_list);
+  std::vector<std::string>().swap(sort_key);
   std::vector<tms_msg_db::Tmsdb>().swap(object_list_);
   return true;
 }
