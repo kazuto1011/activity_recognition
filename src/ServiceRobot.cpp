@@ -23,24 +23,12 @@ ServiceRobot::ServiceRobot(ros::NodeHandle* nh) :
   tag_list_.push_back("coffee");
   tag_list_.push_back("pot");
 
-#if 0
-  vec_itr itr = tag_list_.begin();
-  hash_table_.insert(std::make_pair("water",&(*itr)));
-  hash_table_.insert(std::make_pair("waterr",&(*itr)));
-  hash_table_.insert(std::make_pair("waterrr",&(*itr)));
-  itr++;
-  hash_table_.insert(std::make_pair("drink",&(*itr)));
-  hash_table_.insert(std::make_pair("drinkk",&(*itr)));
-  hash_table_.insert(std::make_pair("drinkkk",&(*itr)));
-#endif
-
   // initialize some nodes
   server_status_ = nh_->advertise<std_msgs::String>("server_status", 1);
   user_status_ = nh_->subscribe("user_activity", 1, &ServiceRobot::setActivity, this);
   voice_server_ = nh_->advertiseService("user_voice_command", &ServiceRobot::voiceCallBack, this);
   tts_client_ = nh_->serviceClient<activity_recognition::robot_tts>("test"/* "smartpal5_tts" */);
   tms_db_client_ = nh_->serviceClient<tms_msg_db::TmsdbGetData>("/tms_db_reader/dbreader");
-
 }
 
 //----------------------------------------------------------------------------------
@@ -59,6 +47,7 @@ void ServiceRobot::setActivity(const std_msgs::StringConstPtr& msg)
   {
     user_activity_ = 0;
     sort_key_.push_back("tea");
+    sort_key_.push_back("drink");
   }
   else if (!msg->data.compare("gaze_at_a_robot"))
   {
@@ -79,6 +68,7 @@ void ServiceRobot::setActivity(const std_msgs::StringConstPtr& msg)
   {
     user_activity_ = 4;
     sort_key_.push_back("coffee");
+    sort_key_.push_back("drink");
   }
   else
   {
@@ -164,7 +154,7 @@ typedef std::vector<tms_msg_db::Tmsdb>::iterator tmsdb_itr;
 bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
                                  activity_recognition::user_voice::Response &res)
 {
-  int TTS_mode = 0;
+  int tts_mode = 0;
   std::string received_text = req.text;
   std::vector<std::string> match_list, sort_key;
 
@@ -212,7 +202,7 @@ bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
           if (srv.response.tmsdb[i].state == 1) {
 #endif
             object_list_.push_back(srv.response.tmsdb[i]);
-            ROS_INFO("matched: \033[1;32m%s\033[0m", srv.response.tmsdb[i].name.c_str());
+            ROS_INFO_STREAM("matched: " << srv.response.tmsdb[i].name);
 #if STATE_CHECK
           }
           else
@@ -249,12 +239,12 @@ bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
       }
     }
 
-    compare_struct compare(this);
+    ServiceRobot::compare_struct compare(this);
     std::sort(object_list_.begin(), object_list_.end(), compare);
 
     for (tmsdb_itr obj_itr = object_list_.begin(); obj_itr != object_list_.end(); obj_itr++)
     {
-      ROS_INFO_STREAM("sorted: " << obj_itr->name);
+      ROS_INFO("sorted: \033[1;32m%s\033[0m", obj_itr->name.c_str());
     }
 
     // recommendation??
@@ -264,7 +254,7 @@ bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
     }
     else
     {
-      this->robotTTS(TTS_mode, object_list_[0].name);
+      this->robotTTS(tts_mode, object_list_[0].name);
     }
 
     res.result = 1;

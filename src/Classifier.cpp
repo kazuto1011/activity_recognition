@@ -6,7 +6,6 @@
  */
 
 #include "common.h"
-#include "FeatureDescriptor.h"
 #include "Classifier.h"
 
 namespace fs = boost::filesystem;

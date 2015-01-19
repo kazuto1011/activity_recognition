@@ -7,7 +7,6 @@
 
 #include "common.h"
 #include "FeatureDescriptor.h"
-#include "Classifier.h"
 
 //----------------------------------------------------------------------------------
 // FeatureDescriptor
@@ -89,7 +88,8 @@ void FeatureDescriptor::imgBuffer(const sensor_msgs::ImageConstPtr& msg)
   // Show the received image
   cv::cvtColor(img, img, CV_GRAY2BGR);
 
-  if (!screen_img_.empty()) {
+  if (!screen_img_.empty())
+  {
     roi = cv::Mat(screen_img_, cv::Rect(30, 86, img.cols, img.rows));
     img.copyTo(roi);
     cv::imshow("moverio", screen_img_);
