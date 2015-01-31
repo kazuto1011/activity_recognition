@@ -71,7 +71,7 @@ bool Classifier::Classify(activity_recognition::classify::Request &req,
   std_msgs::String msg;
   std::vector<Video> video_list;
 
-  msg.data = "loading features..";
+  msg.data = "loading features";
   server_status_.publish(msg);
 
   int num_data = 1;
@@ -149,7 +149,7 @@ bool Classifier::Classify(activity_recognition::classify::Request &req,
   }
   else
   {
-    msg_.data = "Dimension reduction, Vector encoding...";
+    msg_.data = "dimensionality reduction";
     server_status_.publish(msg_);
   }
 
@@ -159,6 +159,9 @@ bool Classifier::Classify(activity_recognition::classify::Request &req,
   // Principal Component Analysis
   cv::Mat comp_mat = cv::Mat_<float>(data_mat.rows, pca_.eigenvalues.rows);
   pca_.project(data_mat, comp_mat);
+
+  msg_.data = "encoding features";
+  server_status_.publish(msg_);
 
   switch(encoding_mode_)
   {
@@ -195,9 +198,21 @@ bool Classifier::Classify(activity_recognition::classify::Request &req,
     std::cout << "Class " << i << ": " << pre_prob[i] << std::endl;
   }
 
-  // notify clients of the result
-  msg_.data = RestoreLabel((int)predict_label);
-  user_status_.publish(msg_);
+  if (predict_label == 1 || predict_label == 3)
+  {
+    if (false/*pre_prob[(int)predict_label] > 0.5*/)
+    {
+      // notify clients of the result
+      msg_.data = RestoreLabel((int)predict_label);
+      user_status_.publish(msg_);
+    }
+  }
+  else
+  {
+    // notify clients of the result
+    msg_.data = RestoreLabel((int)predict_label);
+    user_status_.publish(msg_);
+  }
 
   // release
   delete[] x_node;

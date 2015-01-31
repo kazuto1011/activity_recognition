@@ -150,7 +150,7 @@ inline bool FeatureDescriptor::detectFeatures()
   std_msgs::String msg;
   activity_recognition::classify srv;
 
-  msg.data = "STIP detecting...";
+  msg.data = "extracting interest points";
   server_status_.publish(msg);
 
   // stip detection

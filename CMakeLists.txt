@@ -97,7 +97,7 @@ add_executable(activity_recognition_server
   src/ServiceRobot.cpp
   libsvm/svm.cpp
 )
-add_dependencies(activity_recognition_server activity_recognition_generate_messages_cpp)
+add_dependencies(activity_recognition_server activity_recognition_generate_messages_cpp tms_msg_db_generate_messages_cpp)
 target_link_libraries(activity_recognition_server
   ${VLFeat_LIBRARY}
   ${OpenCV_LIBRARIES}

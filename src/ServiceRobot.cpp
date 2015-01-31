@@ -27,7 +27,7 @@ ServiceRobot::ServiceRobot(ros::NodeHandle* nh) :
   server_status_ = nh_->advertise<std_msgs::String>("server_status", 1);
   user_status_ = nh_->subscribe("user_activity", 1, &ServiceRobot::setActivity, this);
   voice_server_ = nh_->advertiseService("user_voice_command", &ServiceRobot::voiceCallBack, this);
-  tts_client_ = nh_->serviceClient<activity_recognition::robot_tts>("test"/* "smartpal5_tts" */);
+  tts_client_ = nh_->serviceClient<activity_recognition::robot_tts>("smartpal5_tts");
   tms_db_client_ = nh_->serviceClient<tms_msg_db::TmsdbGetData>("/tms_db_reader/dbreader");
 }
 
@@ -76,77 +76,6 @@ void ServiceRobot::setActivity(const std_msgs::StringConstPtr& msg)
   }
 }
 
-#if 0 // this part never refers tms database
-//----------------------------------------------------------------------------------
-// TODO: refering the tms database
-bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
-                                 activity_recognition::user_voice::Response &res)
-{
-  ROS_INFO_STREAM("Received text: " << req.text);
-  if (!req.text.compare("bring me some water"))
-  {
-    // taking-water service
-    this->robotTTS(0);
-    res.result = 1;
-  }
-  else
-  {
-    ROS_INFO("invalid voice command");
-    res.result = 0;
-  }
-  return true;
-}
-
-//----------------------------------------------------------------------------------
-void ServiceRobot::robotTTS(int service)
-{
-  activity_recognition::robot_tts srv;
-
-  switch (service)
-  {
-    case 0: // taking-water service
-      switch (user_activity_)
-      {
-        case 0: // eating
-          srv.request.text = "Would you need a bottle of tea ?";
-          break;
-        case 2: // planting
-          srv.request.text = "Would you need a watering can ?";
-          break;
-        case 4: // reading
-          srv.request.text = "Would you need a cup of coffee ?";
-          break;
-        default:
-          srv.request.text = "What kind of water would you need ?";
-          break;
-      }
-      break;
-    case 1: // pro-active suggestion
-      switch (user_activity_)
-      {
-        case 1: // gazing at the robot
-          srv.request.text = "Can I help you ?";
-          break;
-        case 3: // looking around
-          srv.request.text = "Are you looking for anything ?";
-          break;
-        default:
-          break;
-      }
-      break;
-  }
-
-  // service call
-  if (tts_client_.call(srv))
-  {
-    ROS_INFO_STREAM("Service robot: " << srv.request.text);
-  }
-  else
-  {
-    ROS_ERROR("Failed to call tts service");
-  }
-}
-#else
 typedef std::vector<std::string>::iterator str_vec_itr;
 typedef std::vector<tms_msg_db::Tmsdb>::iterator tmsdb_itr;
 
@@ -159,13 +88,13 @@ bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
   std::vector<std::string> match_list, sort_key;
 
   std::cout << "-------------------------------------\n";
-  ROS_INFO("Received: \033[1;32m%s\033[0m", received_text.c_str());
+  ROS_INFO("received: \033[1;32m%s\033[0m", received_text.c_str());
 
   for (str_vec_itr itr = tag_list_.begin(); itr != tag_list_.end(); itr++)
   {
     if (strstr(received_text.c_str(), (*itr).c_str()))
     {
-      ROS_INFO("Tag: \033[1;34m%s\033[0m", (*itr).c_str());
+      ROS_INFO("tag: \033[1;34m%s\033[0m", (*itr).c_str());
       match_list.push_back(*itr);
     }
   }
@@ -181,18 +110,18 @@ bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
       // send a requrst to get the object list
       if (tms_db_client_.call(srv))
       {
-        ROS_INFO("Search database for \"%s\"", srv.request.tmsdb.tag.c_str());
+        ROS_INFO("search database for \"%s\"", srv.request.tmsdb.tag.c_str());
       }
       else
       {
-        ROS_ERROR("Failed to call service dbreader");
+        ROS_ERROR("failed to call service dbreader");
         return false;
       }
 
       // state checking
       if (srv.response.tmsdb.empty())
       {
-        ROS_INFO("No matched tag on database");
+        ROS_INFO("no matched tag on database");
       }
       else
       {
@@ -216,8 +145,8 @@ bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
   }
   else
   {
-    ROS_ERROR("Not supported command");
-    this->robotTTS(5, "");
+    ROS_ERROR("not supported command");
+    //this->robotTTS(5, "");
     res.result = 0;
     return false;
   }
@@ -261,7 +190,7 @@ bool ServiceRobot::voiceCallBack(activity_recognition::user_voice::Request &req,
   }
   else
   {
-    ROS_INFO("No object has listed");
+    ROS_INFO("no object has listed");
     this->robotTTS(6, "");
     res.result = 0;
   }
@@ -311,7 +240,6 @@ void ServiceRobot::robotTTS(int service, std::string object_name)
   }
   else
   {
-    ROS_ERROR("Failed to call tts service");
+    ROS_ERROR("failed to call tts service");
   }
 }
-#endif
