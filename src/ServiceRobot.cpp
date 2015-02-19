@@ -218,7 +218,7 @@ void ServiceRobot::robotTTS(int service, std::string object_name)
       srv.request.text = "What kind of water would you need ?";
       break;
     case 3:
-      srv.request.text = "Can I help you ?";
+      srv.request.text = "May I help you ?";
       break;
     case 4:
       srv.request.text = "Are you looking for anything ?";

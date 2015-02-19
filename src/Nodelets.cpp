@@ -58,7 +58,7 @@ private:
 public:
   virtual void onInit()
   {
-    NODELET_INFO("Featuredescriptor nodelet");
+    NODELET_INFO("FeatureDescriptor nodelet");
 
     ros::AsyncSpinner spinner(0);
     nh_ = getMTNodeHandle();

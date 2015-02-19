@@ -200,7 +200,7 @@ bool Classifier::Classify(activity_recognition::classify::Request &req,
 
   if (predict_label == 1 || predict_label == 3)
   {
-    if (false/*pre_prob[(int)predict_label] > 0.5*/)
+    if (pre_prob[(int)predict_label] > 0.5)
     {
       // notify clients of the result
       msg_.data = RestoreLabel((int)predict_label);
