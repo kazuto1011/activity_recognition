@@ -61,13 +61,14 @@ public:
 class VLAD {
 private:
     vl_size vlad_dimension; // the dimension of vlad
-    VlKMeans* kmeans;       // kmeans object
+    //VlKMeans* kmeans;       // kmeans object
     float* means;           // kmeans centers
     VlVectorComparisonType distance_type;
     vl_size num_centers; // the number of centers
     vl_type data_type;   // type of data
     vl_size dimension;   // data dimension
 public:
+    VlKMeans* kmeans;       // kmeans object
     VLAD();
     VLAD(const char* file_dir);
     ~VLAD();
@@ -93,6 +94,7 @@ private:
     vl_size dimension;   // data dimension
 public:
     BoVW();
+    BoVW(const char* file_dir);
     ~BoVW();
     void KmeansCluster(cv::Mat& data, int  num_visualwords);
     cv::Mat BuidHistogram(cv::Mat& dataToBuild);

@@ -86,11 +86,9 @@ cv::Mat FisherVector::FvEncode(cv::Mat &data)
    *  - Square root
    *  - L2 normalization
    */
-  vl_fisher_encode(encoded_vec.data, data_type,
-                   means, dimension, num_clusters, covariances, priors,
-                   data.data, data.rows,
-                   VL_FISHER_FLAG_IMPROVED
-                   );
+  vl_fisher_encode(encoded_vec.data, data_type, means, dimension, num_clusters, covariances, priors, data.data,
+                   data.rows,
+                   VL_FISHER_FLAG_IMPROVED);
 
   return encoded_vec;
 }
@@ -183,7 +181,7 @@ VLAD::VLAD(const char* file_dir)
   ifs.close();
 
   // intialize the kmeans object and set the params
-  kmeans = vl_kmeans_new(data_type, distance_type);
+  this->kmeans = vl_kmeans_new(data_type, distance_type);
   vl_kmeans_set_centers(kmeans, means, dimension, num_centers);
 }
 
@@ -205,11 +203,8 @@ cv::Mat VLAD::VladEncode(cv::Mat& data)
    * VL_VLAD_FLAG_NORMALIZE_COMPONENTS
    */
   cv::Mat encoded_vec = cv::Mat_<float>(1, (int)vlad_dimension);
-  vl_vlad_encode(encoded_vec.data, data_type,
-                 means, dimension, num_centers,
-                 data.data, data.rows,
-                 assignments.data,
-                 VL_VLAD_FLAG_SQUARE_ROOT | VL_VLAD_FLAG_NORMALIZE_COMPONENTS);
+  vl_vlad_encode(encoded_vec.data, data_type, means, dimension, num_centers, data.data, data.rows, assignments.data,
+  VL_VLAD_FLAG_SQUARE_ROOT | VL_VLAD_FLAG_NORMALIZE_MASS);
 
   return encoded_vec;
 }
@@ -249,7 +244,7 @@ VLAD::~VLAD()
 // Bag of Visual Words
 //----------------------------------------------------------------------------------
 
-// create a new VLAD instance
+// create a new BoVW instance
 // with a k-means that clustering given data
 //----------------------------------------------------------------------------------
 BoVW::BoVW()
@@ -271,18 +266,44 @@ void BoVW::KmeansCluster(cv::Mat& data, int num_visualwords)
   this->means = (float*)vl_kmeans_get_centers(kmeans);
 }
 
+// create a new BoVW instance
+// with a k-means loading external params
+//----------------------------------------------------------------------------------
+BoVW::BoVW(const char* file_dir)
+{
+  std::ifstream ifs(file_dir, std::ios_base::binary);
+  if (!ifs)
+    std::cout << "Failed to open the file" << std::endl;
+
+  ifs.read((char*)&data_type, sizeof(vl_type));
+  ifs.read((char*)&distance_type, sizeof(VlVectorComparisonType));
+  ifs.read((char*)&dimension, sizeof(vl_size));
+  ifs.read((char*)&num_centers, sizeof(vl_size));
+
+  this->bovw_dimension = num_centers;
+
+  this->means = (float*)vl_malloc(sizeof(float) * num_centers * dimension);
+  for (unsigned int i = 0; i < dimension * num_centers; i++)
+  {
+    ifs.read((char*)&means[i], sizeof(float));
+  }
+
+  ifs.close();
+
+  // intialize the kmeans object and set the params
+  kmeans = vl_kmeans_new(data_type, distance_type);
+  vl_kmeans_set_centers(kmeans, means, dimension, num_centers);
+}
+
 // build histogram
 //----------------------------------------------------------------------------------
 cv::Mat BoVW::BuidHistogram(cv::Mat& data)
 {
-  cv::Mat indexes = cv::Mat_<unsigned int>(1, data.rows);
+  cv::Mat indexes = cv::Mat_<int>(1, data.rows);
 
   vl_kmeans_quantize(kmeans, (vl_uint32*)indexes.data, NULL, data.data, data.rows);
 
-#if L1_NORM | L2_NORM
-  float l1_sum = 0.;
   float l2_sum = 0.;
-#endif
 
   float tmp;
 
@@ -291,29 +312,16 @@ cv::Mat BoVW::BuidHistogram(cv::Mat& data)
   for (int i = 0; i < data.rows; i++)
   {
     tmp = ++(builtHist.at<float>(0, indexes.at<unsigned int>(0, i)));
-#if L1_NORM
-    l1_sum += tmp;
-#endif
-#if L2_NORM
-    l2_sum += tmp*tmp;
-#endif
+    l2_sum += tmp * tmp;
   }
 
-#if L1_NORM
-  for (unsigned int i = 0; i < bovw_dimension; i++)
-  {
-    builtHist.at<float>(0, i) /= l1_sum;
-  }
-#endif
-
-#if L2_NORM
   l2_sum = vl_sqrt_f(l2_sum);
   l2_sum = VL_MAX(l2_sum, 1e-12);
+
   for (unsigned int i = 0; i < bovw_dimension; i++)
   {
     builtHist.at<float>(0, i) /= l2_sum;
   }
-#endif
 
   return builtHist;
 }
