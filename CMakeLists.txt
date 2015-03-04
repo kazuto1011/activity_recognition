@@ -73,6 +73,7 @@ add_library(${PLUGIN_NAME}
   src/vector_encoding.cpp
   libsvm/svm.cpp
 )
+add_dependencies(${PLUGIN_NAME} activity_recognition_generate_messages_cpp)
 target_link_libraries(${PLUGIN_NAME}
   ${VLFeat_LIBRARY}
   ${OpenCV_LIBRARIES}
