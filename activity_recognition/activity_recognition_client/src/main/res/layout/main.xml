@@ -1,0 +1,112 @@
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity"
+    android:id="@+id/relative"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_centerVertical="true"
+        android:id="@+id/linear"
+        android:layout_toRightOf="@+id/button"
+        android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp"
+        android:layout_alignBottom="@id/button">
+
+        <!-- Speech content -->
+        <TextView
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Speech Content"
+            android:textSize="30dp"
+            android:layout_gravity="center_vertical"
+            />
+
+        <TextView
+            android:id="@+id/voice"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="#B0B0B0"
+            android:textColor="#FFFFF0"
+            android:textSize="30dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_gravity="center_horizontal"
+            />
+
+        <!-- User activity -->
+        <TextView
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="User Activity"
+            android:textSize="30dp"
+            android:layout_gravity="center_vertical"
+            />
+
+        <org.ros.android.view.RosTextView
+            android:id="@+id/user_activity"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="#B0B0B0"
+            android:textColor="#FFFFF0"
+            android:textSize="30dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_gravity="center_horizontal"
+            />
+
+        <!-- Server status -->
+        <TextView
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Server Status"
+            android:textSize="30dp"
+            android:layout_gravity="center_vertical"
+            />
+
+        <org.ros.android.view.RosTextView
+            android:id="@+id/server_status"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="#B0B0B0"
+            android:textColor="#FFFFF0"
+            android:textSize="30dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_gravity="center_horizontal"
+            />
+
+    </LinearLayout>
+
+    <Button
+        android:layout_width="320dp"
+        android:layout_height="70dp"
+        android:text="Start Speaking"
+        android:id="@+id/button"
+        android:textSize="30dp"
+        android:background="#808080"
+        android:textColor="#FFFFF0"
+        android:layout_gravity="center_vertical"
+        android:layout_marginLeft="30dp"
+        android:layout_marginBottom="30dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        />
+
+</RelativeLayout>
