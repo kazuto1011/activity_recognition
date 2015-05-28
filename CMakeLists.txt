@@ -51,10 +51,10 @@ catkin_package(
 ###########
 
 #VLFeat include directory
-set(VLFeat_INCLUDE_DIRS "~/vlfeat-0.9.19")
+set(VLFeat_INCLUDE_DIRS "~/vlfeat")
 
 # VLFeat library path
-set(VLFeat_LIBRARY "~/vlfeat-0.9.19/bin/glnxa64/libvl.so")
+set(VLFeat_LIBRARY "~/vlfeat/bin/glnxa64/libvl.so")
 
 include_directories(
   include
