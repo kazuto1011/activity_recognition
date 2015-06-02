@@ -302,6 +302,8 @@ cv::Mat BoVW::BuidHistogram(cv::Mat& data)
 
     vl_kmeans_quantize(kmeans, (vl_uint32*)indexes.data, NULL, data.data, data.rows);
 
+
+    //L2 norm
     float tmp, l2_sum = 0.;
     float* builtHist_row = builtHist.ptr<float>(0);
     const unsigned int* indexes_row = indexes.ptr<unsigned int>(0);
