@@ -1,0 +1,17 @@
+<library path="lib/libActivityRecognitionServer">
+  <class type="activity_recognition_server::ClassifierNodelet" base_class_type="nodelet::Nodelet">
+  	<description> 
+  		Classifier nodelet 
+  	</description>
+  </class>
+  <class type="activity_recognition_server::FeatureDescriptorNodelet" base_class_type="nodelet::Nodelet">
+  	<description> 
+      Feature descriptor nodelet
+  	</description>
+  </class>
+  <class type="activity_recognition_server::ServiceRobotNodelet" base_class_type="nodelet::Nodelet">
+  	<description> 
+  		Service robot nodelet 
+  	</description>
+  </class>
+</library>

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(activity_recognition)
+project(activity_recognition_server)
 
 find_package(catkin REQUIRED COMPONENTS
   pluginlib
@@ -18,7 +18,7 @@ find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system filesystem thread)
 
 ## Set the plugin name
-set(PLUGIN_NAME ActivityRecognition)
+set(PLUGIN_NAME ActivityRecognitionServer)
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -73,7 +73,7 @@ add_library(${PLUGIN_NAME}
   src/vector_encoding.cpp
   libsvm/svm.cpp
 )
-add_dependencies(${PLUGIN_NAME} activity_recognition_generate_messages_cpp)
+add_dependencies(${PLUGIN_NAME} activity_recognition_server_generate_messages_cpp)
 target_link_libraries(${PLUGIN_NAME}
   ${VLFeat_LIBRARY}
   ${OpenCV_LIBRARIES}
@@ -84,7 +84,7 @@ target_link_libraries(${PLUGIN_NAME}
 add_executable(nodelet_server
   src/nodelet_server.cpp
 )
-add_dependencies(nodelet_server activity_recognition_generate_messages_cpp)
+add_dependencies(nodelet_server activity_recognition_server_generate_messages_cpp)
 target_link_libraries(nodelet_server
   ${catkin_LIBRARIES}
 )
@@ -98,7 +98,7 @@ add_executable(activity_recognition_server
   src/ServiceRobot.cpp
   libsvm/svm.cpp
 )
-add_dependencies(activity_recognition_server activity_recognition_generate_messages_cpp tms_msg_db_generate_messages_cpp)
+add_dependencies(activity_recognition_server activity_recognition_server_generate_messages_cpp tms_msg_db_generate_messages_cpp)
 target_link_libraries(activity_recognition_server
   ${VLFeat_LIBRARY}
   ${OpenCV_LIBRARIES}
@@ -109,7 +109,7 @@ target_link_libraries(activity_recognition_server
 add_executable(virtual_smartpal
   src/virtual_smartpal.cpp
 )
-add_dependencies(virtual_smartpal activity_recognition_generate_messages_cpp)
+add_dependencies(virtual_smartpal activity_recognition_server_generate_messages_cpp)
 target_link_libraries(virtual_smartpal
   ${catkin_LIBRARIES}
 )
