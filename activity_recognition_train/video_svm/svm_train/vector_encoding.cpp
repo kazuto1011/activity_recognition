@@ -312,7 +312,7 @@ cv::Mat BoVW::BuidHistogram(cv::Mat& data)
 #pragma omp parallel for num_threads(vl_get_max_threads())
 #endif
     for (int i = 0; i < data.rows; i++)
-        (builtHist.at<float>(0, indexes.at<unsigned int>(0, i)))++;
+        builtHist_row[indexes_row[i]]++;
 
     for (int i = 0; i < data.rows; i++)
     {

@@ -300,19 +300,22 @@ BoVW::BoVW(const char* file_dir)
 cv::Mat BoVW::BuidHistogram(cv::Mat& data)
 {
   cv::Mat indexes = cv::Mat_<int>(1, data.rows);
+  cv::Mat builtHist = cv::Mat::zeros(1, (int)bovw_dimension, CV_32F);
 
   vl_kmeans_quantize(kmeans, (vl_uint32*)indexes.data, NULL, data.data, data.rows);
+ 
+  //L2 norm
+  float tmp, l2_sum = 0.;
+  float* builtHist_row = builtHist.ptr<float>(0);
+  const unsigned int* indexes_row = indexes.ptr<unsigned int>(0);
 
-  float l2_sum = 0.;
-
-  float tmp;
-
-  cv::Mat builtHist = cv::Mat::zeros(1, (int)bovw_dimension, CV_32F);
+  for (int i = 0; i < data.rows; i++)
+      builtHist_row[indexes_row[i]]++;
 
   for (int i = 0; i < data.rows; i++)
   {
-    tmp = ++(builtHist.at<float>(0, indexes.at<unsigned int>(0, i)));
-    l2_sum += tmp * tmp;
+    tmp = builtHist_row[i];
+    l2_sum += tmp*tmp;
   }
 
   l2_sum = vl_sqrt_f(l2_sum);
